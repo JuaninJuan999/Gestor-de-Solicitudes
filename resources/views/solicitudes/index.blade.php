@@ -1,0 +1,326 @@
+@extends('layouts.app')
+
+@section('content')
+<div class="py-12">
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="p-6 bg-white border-b border-gray-200">
+               
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-3xl font-bold text-blue-600">Mis Solicitudes</h2>
+                    <a href="{{ route('solicitudes.create') }}" 
+                       class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
+                        Registrar nueva solicitud
+                    </a>
+                </div>
+
+                @if(session('success'))
+                    <div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+                        {{ session('success') }}
+                    </div>
+                @endif
+
+                <div class="mb-6 bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-500 rounded-lg p-5 shadow-md">
+                    <form method="GET" action="{{ route('solicitudes.index') }}" class="flex flex-wrap gap-4 items-end">
+                        <div class="flex-1 min-w-[250px]">
+                            <label for="estado" class="block text-sm font-bold text-gray-700 mb-2">
+                                🔍 Filtrar por Estado
+                            </label>
+                            <select name="estado" id="estado" 
+                                class="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
+                                <option value="">📋 Todas mis solicitudes</option>
+                                <option value="pendiente" {{ request('estado') == 'pendiente' ? 'selected' : '' }}>
+                                    ⏳ Pendiente
+                                </option>
+                                <option value="en_proceso" {{ request('estado') == 'en_proceso' ? 'selected' : '' }}>
+                                    🔄 En Proceso
+                                </option>
+                                <option value="finalizada" {{ request('estado') == 'finalizada' ? 'selected' : '' }}>
+                                    ✅ Finalizada
+                                </option>
+                                <option value="rechazada" {{ request('estado') == 'rechazada' ? 'selected' : '' }}>
+                                    ❌ Rechazada
+                                </option>
+                            </select>
+                        </div>
+                        <div class="flex gap-3">
+                            <button type="submit" 
+                                class="px-6 py-2.5 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition shadow-md">
+                                🔍 Filtrar
+                            </button>
+                            <a href="{{ route('solicitudes.index') }}" 
+                               class="px-6 py-2.5 bg-gray-500 text-white font-semibold rounded-lg hover:bg-gray-600 transition shadow-md">
+                                🔄 Limpiar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+
+                @if(!$solicitudes->isEmpty())
+                    <div class="mb-4 flex items-center gap-3">
+                        <span class="px-4 py-2 bg-blue-100 text-blue-800 font-semibold rounded-lg text-sm">
+                            📊 Total: {{ $solicitudes->total() }} solicitud(es)
+                        </span>
+                        @if(request('estado'))
+                            <span class="px-4 py-2 bg-green-100 text-green-800 font-semibold rounded-lg text-sm">
+                                Filtro: 
+                                @if(request('estado') == 'pendiente') ⏳ Pendiente
+                                @elseif(request('estado') == 'en_proceso') 🔄 En Proceso
+                                @elseif(request('estado') == 'finalizada') ✅ Finalizada
+                                @elseif(request('estado') == 'rechazada') ❌ Rechazada
+                                @endif
+                            </span>
+                        @endif
+                    </div>
+                @endif
+
+                @if($solicitudes->isEmpty())
+                    <div class="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                        <p class="text-gray-500 text-lg font-semibold">
+                            @if(request('estado'))
+                                ⚠️ No se encontraron solicitudes con el estado seleccionado.
+                            @else
+                                No tienes solicitudes registradas aún.
+                            @endif
+                        </p>
+                        @if(request('estado'))
+                            <a href="{{ route('solicitudes.index') }}" 
+                               class="mt-4 inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                                Ver todas las solicitudes
+                            </a>
+                        @endif
+                    </div>
+                @else
+                    <div class="space-y-6">
+                        @foreach($solicitudes as $solicitud)
+                            <div class="border-2 border-gray-200 rounded-lg p-6 hover:border-blue-400 transition">
+                                <!-- Encabezado de la solicitud -->
+                                <div class="flex justify-between items-start mb-4">
+                                    <div>
+                                        <div class="mb-2 flex flex-wrap gap-2">
+                                            <!-- Consecutivo del ticket -->
+                                            <span class="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm font-mono font-bold">
+                                                {{ $solicitud->consecutivo ?? 'TICKET-' . str_pad($solicitud->id, 4, '0', STR_PAD_LEFT) }}
+                                            </span>
+                                            <!-- Área del usuario -->
+                                            @if($solicitud->user && $solicitud->user->area)
+                                                <span class="px-3 py-1 bg-purple-600 text-white rounded-lg text-sm font-semibold">
+                                                    📍 {{ $solicitud->user->area }}
+                                                </span>
+                                            @endif
+                                            <!-- Nombre del usuario -->
+                                            <span class="px-3 py-1 bg-green-600 text-white rounded-lg text-sm font-semibold">
+                                                👤 {{ $solicitud->user->name ?? 'Usuario' }}
+                                            </span>
+                                            <!-- Etiqueta tipo de solicitud -->
+                                            @php
+                                                $etiquetaTipo = '';
+                                                $colorTipo = 'bg-gray-500';
+                                                if ($solicitud->tipo_solicitud == 'estandar') {
+                                                    $etiquetaTipo = 'Solicitud Estándar';
+                                                    $colorTipo = 'bg-green-700';
+                                                } elseif ($solicitud->tipo_solicitud == 'pedido_mensual') {
+                                                    $etiquetaTipo = 'Pedido Mensual';
+                                                    $colorTipo = 'bg-blue-700';
+                                                } elseif ($solicitud->tipo_solicitud == 'salida_insumos') {
+                                                    $etiquetaTipo = 'Salida Insumos';
+                                                    $colorTipo = 'bg-yellow-600 text-black';
+                                                }
+                                            @endphp
+                                            <span class="px-3 py-1 {{ $colorTipo }} rounded-lg text-sm font-semibold" style="color: white;">
+                                                {{ $etiquetaTipo }}
+                                            </span>
+                                        </div>
+                                        <h3 class="text-xl font-bold text-gray-800">{{ $solicitud->titulo }}</h3>
+                                        <p class="text-sm text-gray-500 mt-1">
+                                            Fecha: {{ $solicitud->created_at->format('d/m/Y H:i') }}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        @if($solicitud->estado == 'pendiente')
+                                            <span class="px-4 py-2 bg-yellow-100 text-yellow-800 font-semibold rounded-full">
+                                                ⏳ Pendiente
+                                            </span>
+                                        @elseif($solicitud->estado == 'en_proceso')
+                                            <span class="px-4 py-2 bg-blue-100 text-blue-800 font-semibold rounded-full">
+                                                🔄 En Proceso
+                                            </span>
+                                        @elseif($solicitud->estado == 'finalizada')
+                                            <span class="px-4 py-2 bg-green-100 text-green-800 font-semibold rounded-full">
+                                                ✅ Finalizada
+                                            </span>
+                                        @elseif($solicitud->estado == 'rechazada')
+                                            <span class="px-4 py-2 bg-red-100 text-red-800 font-semibold rounded-full">
+                                                ❌ Rechazada
+                                            </span>
+                                        @else
+                                            <span class="px-4 py-2 bg-gray-100 text-gray-800 font-semibold rounded-full">
+                                                {{ ucfirst($solicitud->estado) }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <!-- Tabla de items solicitados por tipo -->
+                                @php
+                                    $itemsTabla = $solicitud->items ?? collect();
+                                    $itemsJson = [];
+                                    $observaciones = '';
+                                    if ($itemsTabla->isEmpty() && strpos($solicitud->descripcion, 'Items solicitados:') !== false) {
+                                        $partes = explode('Items solicitados:', $solicitud->descripcion);
+                                        $observaciones = trim($partes[0]);
+                                        $itemsJsonString = trim($partes[1] ?? '');
+                                        $itemsJson = json_decode($itemsJsonString, true) ?? [];
+                                    } else {
+                                        $observaciones = $solicitud->descripcion;
+                                    }
+                                @endphp
+
+                                @if($itemsTabla->isNotEmpty() || !empty($itemsJson))
+                                    <div class="mb-4">
+                                        <h4 class="text-sm font-semibold text-gray-700 mb-2">Items solicitados:</h4>
+                                        <div class="overflow-x-auto">
+                                            @if($solicitud->tipo_solicitud == 'estandar')
+                                                <table class="min-w-full border-collapse border border-gray-300">
+                                                    <thead class="bg-green-600 text-white">
+                                                        <tr>
+                                                            <th class="border border-gray-300 px-4 py-2 text-left">REFERENCIA</th>
+                                                            <th class="border border-gray-300 px-4 py-2 text-center">UNIDAD</th>
+                                                            <th class="border border-gray-300 px-4 py-2 text-left">DESCRIPCIÓN</th>
+                                                            <th class="border border-gray-300 px-4 py-2 text-center">CANTIDAD</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="bg-white">
+                                                        @if($itemsTabla->isNotEmpty())
+                                                            @foreach($itemsTabla as $item)
+                                                                <tr class="hover:bg-gray-50">
+                                                                    <td class="border border-gray-300 px-4 py-2">{{ $item->referencia ?? '-' }}</td>
+                                                                    <td class="border border-gray-300 px-4 py-2 text-center">{{ $item->unidad ?? '-' }}</td>
+                                                                    <td class="border border-gray-300 px-4 py-2">{{ $item->descripcion ?? '-' }}</td>
+                                                                    <td class="border border-gray-300 px-4 py-2 text-center">{{ $item->cantidad ?? '-' }}</td>
+                                                                </tr>
+                                                            @endforeach
+                                                        @else
+                                                            @foreach($itemsJson as $item)
+                                                                <tr class="hover:bg-gray-50">
+                                                                    <td class="border border-gray-300 px-4 py-2">{{ $item['referencia'] ?? '-' }}</td>
+                                                                    <td class="border border-gray-300 px-4 py-2 text-center">{{ $item['unidad'] ?? '-' }}</td>
+                                                                    <td class="border border-gray-300 px-4 py-2">{{ $item['descripcion'] ?? '-' }}</td>
+                                                                    <td class="border border-gray-300 px-4 py-2 text-center">{{ $item['cantidad'] ?? '-' }}</td>
+                                                                </tr>
+                                                            @endforeach
+                                                        @endif
+                                                    </tbody>
+                                                </table>
+                                            @elseif($solicitud->tipo_solicitud == 'pedido_mensual')
+                                                <table class="min-w-full border-collapse border border-gray-300">
+                                                    <thead class="bg-blue-600 text-white">
+                                                        <tr>
+                                                            <th class="border border-gray-300 px-4 py-2 text-left">CÓDIGO</th>
+                                                            <th class="border border-gray-300 px-4 py-2 text-left">DESCRIPCIÓN</th>
+                                                            <th class="border border-gray-300 px-4 py-2 text-center">CANTIDAD</th>
+                                                            <th class="border border-gray-300 px-4 py-2 text-left">BODEGA</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="bg-white">
+                                                        @if($itemsTabla->isNotEmpty())
+                                                            @foreach($itemsTabla as $item)
+                                                                <tr class="hover:bg-gray-50">
+                                                                    <td class="border border-gray-300 px-4 py-2">{{ $item->codigo ?? '-' }}</td>
+                                                                    <td class="border border-gray-300 px-4 py-2">{{ $item->descripcion ?? '-' }}</td>
+                                                                    <td class="border border-gray-300 px-4 py-2 text-center">{{ $item->cantidad ?? '-' }}</td>
+                                                                    <td class="border border-gray-300 px-4 py-2">{{ $item->bodega ?? '-' }}</td>
+                                                                </tr>
+                                                            @endforeach
+                                                        @else
+                                                            @foreach($itemsJson as $item)
+                                                                <tr class="hover:bg-gray-50">
+                                                                    <td class="border border-gray-300 px-4 py-2">{{ $item['codigo'] ?? '-' }}</td>
+                                                                    <td class="border border-gray-300 px-4 py-2">{{ $item['descripcion'] ?? '-' }}</td>
+                                                                    <td class="border border-gray-300 px-4 py-2 text-center">{{ $item['cantidad'] ?? '-' }}</td>
+                                                                    <td class="border border-gray-300 px-4 py-2">{{ $item['bodega'] ?? '-' }}</td>
+                                                                </tr>
+                                                            @endforeach
+                                                        @endif
+                                                    </tbody>
+                                                </table>
+                                            @elseif($solicitud->tipo_solicitud == 'salida_insumos')
+                                                <table class="min-w-full border-collapse border border-gray-300">
+                                                    <thead class="bg-yellow-600 text-white">
+                                                        <tr>
+                                                            <th class="border px-4 py-2">CÓDIGO</th>
+                                                            <th class="border px-4 py-2">DESCRIPCIÓN</th>
+                                                            <th class="border px-4 py-2">CANTIDAD</th>
+                                                            <th class="border px-4 py-2">ÁREA CONSUMO</th>
+                                                            <th class="border px-4 py-2">CENTRO DE COSTOS</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @if($itemsTabla->isNotEmpty())
+                                                            @foreach($itemsTabla as $item)
+                                                                <tr>
+                                                                    <td class="border px-4 py-2">{{ $item->codigo ?? '-' }}</td>
+                                                                    <td class="border px-4 py-2">{{ $item->descripcion ?? '-' }}</td>
+                                                                    <td class="border px-4 py-2">{{ $item->cantidad ?? '-' }}</td>
+                                                                    <td class="border px-4 py-2">{{ $item->area_consumo ?? '-' }}</td>
+                                                                    <td class="border px-4 py-2">{{ $item->centro_costos_item ?? '-' }}</td>
+                                                                </tr>
+                                                            @endforeach
+                                                        @else
+                                                            @foreach($itemsJson as $item)
+                                                                <tr>
+                                                                    <td class="border px-4 py-2">{{ $item['codigo'] ?? '-' }}</td>
+                                                                    <td class="border px-4 py-2">{{ $item['descripcion'] ?? '-' }}</td>
+                                                                    <td class="border px-4 py-2">{{ $item['cantidad'] ?? '-' }}</td>
+                                                                    <td class="border px-4 py-2">{{ $item['area_consumo'] ?? '-' }}</td>
+                                                                    <td class="border px-4 py-2">{{ $item['centro_costos_item'] ?? '-' }}</td>
+                                                                </tr>
+                                                            @endforeach
+                                                        @endif
+                                                    </tbody>
+                                                </table>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endif
+
+                                <!-- Observaciones -->
+                                @if(!empty($observaciones) && $observaciones != '')
+                                    <div class="mb-4">
+                                        <h4 class="text-sm font-semibold text-gray-700 mb-1">Observaciones:</h4>
+                                        <p class="text-gray-600">{{ $observaciones }}</p>
+                                    </div>
+                                @endif
+
+                                <!-- Archivo adjunto -->
+                                @if($solicitud->archivo)
+                                    <div class="mt-3">
+                                        <a href="{{ Storage::url($solicitud->archivo) }}" 
+                                           target="_blank"
+                                           class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition">
+                                            📎 Ver archivo adjunto
+                                        </a>
+                                    </div>
+                                @endif
+
+                                <!-- Botón Ver Detalle y Comentarios -->
+                                <div class="mt-4 pt-4 border-t border-gray-200">
+                                    <a href="{{ route('solicitudes.show', $solicitud) }}" 
+                                       class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
+                                        💬 Ver Detalle y Comentarios
+                                    </a>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    <div class="mt-6">
+                        {{ $solicitudes->links() }}
+                    </div>
+                @endif
+
+            </div>
+        </div>
+    </div>
+</div>
+@endsection
+
