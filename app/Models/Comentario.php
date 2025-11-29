@@ -12,7 +12,11 @@ class Comentario extends Model
     protected $fillable = [
         'solicitud_id',
         'user_id',
-        'comentario'
+        'comentario',
+    ];
+
+    protected $casts = [
+        'created_at' => 'datetime',
     ];
 
     public function solicitud()
