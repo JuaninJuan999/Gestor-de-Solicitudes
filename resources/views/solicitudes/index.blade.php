@@ -1,3 +1,4 @@
+{{-- Vista: Listado de solicitudes del usuario autenticado --}}
 @extends('layouts.app')
 
 @section('content')
@@ -295,7 +296,7 @@
                                 <!-- Archivo adjunto -->
                                 @if($solicitud->archivo)
                                     <div class="mt-3">
-                                        <a href="{{ Storage::url($solicitud->archivo) }}" 
+                                        <a href="{{ url('storage/' . $solicitud->archivo) }}" 
                                            target="_blank"
                                            class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition">
                                             📎 Ver archivo adjunto

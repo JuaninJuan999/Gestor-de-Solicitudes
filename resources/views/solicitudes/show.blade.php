@@ -1,296 +1,297 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $solicitud->ticket_id }} - Detalle</title>
-    <style>
-        /* Tu CSS aquí, igual que lo tienes actualmente */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; }
-        .header { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .header h1 { color: #667eea; margin-bottom: 10px; }
-        .ticket-info { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px; }
-        .info-item { padding: 10px; background: #f8f9fa; border-radius: 5px; }
-        .info-item label { font-weight: bold; color: #666; display: block; margin-bottom: 5px; }
-        .badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
-        .badge-pending { background: #ffc107; color: white; }
-        .badge-process { background: #17a2b8; color: white; }
-        .badge-finished { background: #28a745; color: white; }
-        .items-section { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .items-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        .items-table th { background: #667eea; color: white; padding: 12px; text-align: left; }
-        .items-table td { padding: 12px; border-bottom: 1px solid #ddd; }
-        .comments-section { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .comment { padding: 15px; margin-bottom: 15px; border-radius: 8px; border-left: 4px solid #667eea; }
-        .comment.admin { background: #e8f5e9; border-left-color: #28a745; }
-        .comment.user { background: #f3e5f5; border-left-color: #667eea; }
-        .comment-header { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; color: #666; }
-        .comment-author { font-weight: bold; color: #333; }
-        .comment-body { color: #333; line-height: 1.6; }
-        .comment-form { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 20px; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; }
-        .form-control { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-family: Arial, sans-serif; }
-        textarea.form-control { min-height: 100px; resize: vertical; }
-        select.form-control { cursor: pointer; }
-        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; text-decoration: none; display: inline-block; }
-        .btn-primary { background: #667eea; color: white; }
-        .btn-primary:hover { background: #5568d3; }
-        .btn-secondary { background: #6c757d; color: white; margin-left: 10px; }
-        .btn-secondary:hover { background: #5a6268; }
-        .alert { padding: 15px; border-radius: 5px; margin-bottom: 20px; }
-        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .status-form { background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-        .back-button { margin-bottom: 20px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="back-button">
-            <a href="{{ Auth::user()->esAdminCompras() ? route('admin.solicitudes.index') : route('solicitudes.index') }}" class="btn btn-secondary">← Volver</a>
+{{-- Vista: Detalle de solicitud con comentarios --}}
+@extends('layouts.app')
+
+@section('content')
+<div class="py-12">
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        
+        <!-- Botón volver -->
+        <div class="mb-6">
+            <a href="{{ Auth::user()->esAdminCompras() ? route('admin.solicitudes.index') : route('solicitudes.index') }}" 
+               class="px-6 py-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition">
+                ← Volver
+            </a>
         </div>
 
         @if(session('success'))
-        <div class="alert alert-success">
-            {{ session('success') }}
-        </div>
+            <div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+                {{ session('success') }}
+            </div>
         @endif
 
-        <div class="header">
-            <h1>{{ $solicitud->ticket_id }}</h1>
-            <div class="ticket-info">
-                <div class="info-item">
-                    <label>Departamento:</label>
-                    <span class="badge" style="background: #9b59b6; color: white;">
-                        {{ $solicitud->user->area ?? 'Sin departamento' }}
-                    </span>
+        <!-- Encabezado de solicitud -->
+        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+            <div class="p-6 bg-white border-b border-gray-200">
+                <h1 class="text-3xl font-bold text-blue-600 mb-4">{{ $solicitud->ticket_id }}</h1>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Departamento:</label>
+                        <span class="px-3 py-1 bg-purple-600 text-white rounded-lg text-sm font-semibold">
+                            {{ $solicitud->user->area ?? 'Sin departamento' }}
+                        </span>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Solicitante:</label>
+                        <span class="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm font-semibold">
+                            👤 {{ $solicitud->user->name }}
+                        </span>
+                    </div>
+                    @php
+                        $etiquetaTipo = '';
+                        $colorTipo = 'bg-gray-500';
+                        if ($solicitud->tipo_solicitud == 'estandar') {
+                            $etiquetaTipo = 'Solicitud Estándar';
+                            $colorTipo = 'bg-green-700';
+                        } elseif ($solicitud->tipo_solicitud == 'pedido_mensual') {
+                            $etiquetaTipo = 'Pedido Mensual';
+                            $colorTipo = 'bg-blue-700';
+                        } elseif ($solicitud->tipo_solicitud == 'salida_insumos') {
+                            $etiquetaTipo = 'Salida Insumos';
+                            $colorTipo = 'bg-yellow-600';
+                        }
+                    @endphp
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Tipo de Solicitud:</label>
+                        <span class="px-3 py-1 {{ $colorTipo }} text-white rounded-lg text-sm font-semibold">
+                            {{ $etiquetaTipo }}
+                        </span>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Estado:</label>
+                        @if($solicitud->estado == 'pendiente')
+                            <span class="px-3 py-1 bg-yellow-100 text-yellow-800 font-semibold rounded-lg">
+                                ⏳ Pendiente
+                            </span>
+                        @elseif($solicitud->estado == 'en_proceso')
+                            <span class="px-3 py-1 bg-blue-100 text-blue-800 font-semibold rounded-lg">
+                                🔄 En Proceso
+                            </span>
+                        @elseif($solicitud->estado == 'finalizada')
+                            <span class="px-3 py-1 bg-green-100 text-green-800 font-semibold rounded-lg">
+                                ✅ Finalizada
+                            </span>
+                        @elseif($solicitud->estado == 'rechazada')
+                            <span class="px-3 py-1 bg-red-100 text-red-800 font-semibold rounded-lg">
+                                ❌ Rechazada
+                            </span>
+                        @else
+                            <span class="px-3 py-1 bg-gray-100 text-gray-800 font-semibold rounded-lg">
+                                {{ ucfirst($solicitud->estado) }}
+                            </span>
+                        @endif
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Fecha:</label>
+                        {{ $solicitud->created_at->format('d/m/Y H:i') }}
+                    </div>
                 </div>
-                <div class="info-item">
-                    <label>Solicitante:</label>
-                    <span class="badge" style="background: #17a2b8; color: white;">
-                        👤 {{ $solicitud->user->name }}
-                    </span>
-                </div>
-                <!-- Etiqueta tipo de solicitud añadida aquí -->
+            </div>
+        </div>
+
+        <!-- Cambiar estado (solo admin) -->
+        @if(Auth::user()->esAdminCompras())
+            <div class="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-6 mb-6">
+                <h3 class="text-lg font-bold text-yellow-800 mb-3">Cambiar Estado de la Solicitud</h3>
+                <form action="{{ route('solicitudes.updateStatus', $solicitud) }}" method="POST">
+                    @csrf
+                    @method('PATCH')
+                    <div class="flex gap-4 items-end">
+                        <div class="flex-1">
+                            <label for="estado" class="block text-sm font-bold text-gray-700 mb-2">Nuevo Estado:</label>
+                            <select name="estado" id="estado" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500">
+                                <option value="pendiente" {{ $solicitud->estado == 'pendiente' ? 'selected' : '' }}>⏳ Pendiente</option>
+                                <option value="en_proceso" {{ $solicitud->estado == 'en_proceso' ? 'selected' : '' }}>🔄 En Proceso</option>
+                                <option value="finalizada" {{ $solicitud->estado == 'finalizada' ? 'selected' : '' }}>✅ Finalizada</option>
+                                <option value="rechazada" {{ $solicitud->estado == 'rechazada' ? 'selected' : '' }}>❌ Rechazada</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="px-6 py-2 bg-yellow-600 text-white font-semibold rounded-lg hover:bg-yellow-700 transition">
+                            Actualizar Estado
+                        </button>
+                    </div>
+                </form>
+            </div>
+        @endif
+
+        <!-- Items solicitados -->
+        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+            <div class="p-6 bg-white border-b border-gray-200">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Ítems Solicitados</h2>
+                
                 @php
-                    $etiquetaTipo = '';
-                    $colorTipo = '#6c757d'; // gris por defecto
-                    if ($solicitud->tipo_solicitud == 'estandar') {
-                        $etiquetaTipo = 'Solicitud Estándar';
-                        $colorTipo = '#27ae60'; // verde
-                    } elseif ($solicitud->tipo_solicitud == 'pedido_mensual') {
-                        $etiquetaTipo = 'Pedido Mensual';
-                        $colorTipo = '#2980b9'; // azul
-                    } elseif ($solicitud->tipo_solicitud == 'salida_insumos') {
-                        $etiquetaTipo = 'Salida Insumos';
-                        $colorTipo = '#f1c40f'; // amarillo
+                    $itemsTabla = $solicitud->items;
+                    $itemsJson = [];
+                    if ($itemsTabla->isEmpty() && strpos($solicitud->descripcion, 'Items solicitados:') !== false) {
+                        $partes = explode('Items solicitados:', $solicitud->descripcion);
+                        $itemsJsonString = trim($partes[1] ?? '');
+                        $itemsJson = json_decode($itemsJsonString, true) ?? [];
                     }
                 @endphp
-                <div class="info-item">
-                    <label>Tipo de Solicitud:</label>
-                    <span class="badge" style="background: {{ $colorTipo }}; color: white;">
-                        {{ $etiquetaTipo }}
-                    </span>
-                </div>
-                <div class="info-item">
-                    <label>Estado:</label>
-                    <span class="badge 
-                        @if($solicitud->estado == 'pendiente') badge-pending
-                        @elseif($solicitud->estado == 'en_proceso') badge-process
-                        @else badge-finished
-                        @endif">
-                        @if($solicitud->estado == 'pendiente') Pendiente
-                        @elseif($solicitud->estado == 'en_proceso') En Proceso
-                        @elseif($solicitud->estado == 'finalizada') Finalizada
-                        @else {{ ucfirst($solicitud->estado) }}
-                        @endif
-                    </span>
-                </div>
-                <div class="info-item">
-                    <label>Fecha:</label>
-                    {{ $solicitud->created_at->format('d/m/Y H:i') }}
-                </div>
+
+                @if($itemsTabla->isNotEmpty() || !empty($itemsJson))
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full border-collapse border border-gray-300">
+                            <thead class="
+                                @if($solicitud->tipo_solicitud === 'estandar') bg-green-600
+                                @elseif($solicitud->tipo_solicitud === 'pedido_mensual') bg-blue-600
+                                @elseif($solicitud->tipo_solicitud === 'salida_insumos') bg-yellow-600
+                                @endif text-white">
+                                <tr>
+                                    @if($solicitud->tipo_solicitud === 'estandar')
+                                        <th class="border border-gray-300 px-4 py-2 text-left">REFERENCIA</th>
+                                        <th class="border border-gray-300 px-4 py-2 text-center">UNIDAD</th>
+                                        <th class="border border-gray-300 px-4 py-2 text-left">DESCRIPCIÓN</th>
+                                        <th class="border border-gray-300 px-4 py-2 text-center">CANTIDAD</th>
+                                    @elseif($solicitud->tipo_solicitud === 'pedido_mensual')
+                                        <th class="border border-gray-300 px-4 py-2 text-left">CÓDIGO</th>
+                                        <th class="border border-gray-300 px-4 py-2 text-left">DESCRIPCIÓN</th>
+                                        <th class="border border-gray-300 px-4 py-2 text-center">CANTIDAD</th>
+                                        <th class="border border-gray-300 px-4 py-2 text-left">BODEGA</th>
+                                    @elseif($solicitud->tipo_solicitud === 'salida_insumos')
+                                        <th class="border px-4 py-2">CÓDIGO</th>
+                                        <th class="border px-4 py-2">DESCRIPCIÓN</th>
+                                        <th class="border px-4 py-2">CANTIDAD</th>
+                                        <th class="border px-4 py-2">ÁREA CONSUMO</th>
+                                        <th class="border px-4 py-2">CENTRO DE COSTOS</th>
+                                    @endif
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white">
+                                @if($itemsTabla->isNotEmpty())
+                                    @foreach($itemsTabla as $item)
+                                        @if($solicitud->tipo_solicitud === 'estandar')
+                                            <tr class="hover:bg-gray-50">
+                                                <td class="border border-gray-300 px-4 py-2">{{ $item->referencia ?? '-' }}</td>
+                                                <td class="border border-gray-300 px-4 py-2 text-center">{{ $item->unidad ?? '-' }}</td>
+                                                <td class="border border-gray-300 px-4 py-2">{{ $item->descripcion ?? '-' }}</td>
+                                                <td class="border border-gray-300 px-4 py-2 text-center">{{ $item->cantidad ?? '-' }}</td>
+                                            </tr>
+                                        @elseif($solicitud->tipo_solicitud === 'pedido_mensual')
+                                            <tr class="hover:bg-gray-50">
+                                                <td class="border border-gray-300 px-4 py-2">{{ $item->codigo ?? '-' }}</td>
+                                                <td class="border border-gray-300 px-4 py-2">{{ $item->descripcion ?? '-' }}</td>
+                                                <td class="border border-gray-300 px-4 py-2 text-center">{{ $item->cantidad ?? '-' }}</td>
+                                                <td class="border border-gray-300 px-4 py-2">{{ $item->bodega ?? '-' }}</td>
+                                            </tr>
+                                        @elseif($solicitud->tipo_solicitud === 'salida_insumos')
+                                            <tr>
+                                                <td class="border px-4 py-2">{{ $item->codigo ?? '-' }}</td>
+                                                <td class="border px-4 py-2">{{ $item->descripcion ?? '-' }}</td>
+                                                <td class="border px-4 py-2">{{ $item->cantidad ?? '-' }}</td>
+                                                <td class="border px-4 py-2">{{ $item->area_consumo ?? '-' }}</td>
+                                                <td class="border px-4 py-2">{{ $item->centro_costos_item ?? '-' }}</td>
+                                            </tr>
+                                        @endif
+                                    @endforeach
+                                @else
+                                    @foreach($itemsJson as $item)
+                                        @if($solicitud->tipo_solicitud === 'estandar')
+                                            <tr class="hover:bg-gray-50">
+                                                <td class="border border-gray-300 px-4 py-2">{{ $item['referencia'] ?? '-' }}</td>
+                                                <td class="border border-gray-300 px-4 py-2 text-center">{{ $item['unidad'] ?? '-' }}</td>
+                                                <td class="border border-gray-300 px-4 py-2">{{ $item['descripcion'] ?? '-' }}</td>
+                                                <td class="border border-gray-300 px-4 py-2 text-center">{{ $item['cantidad'] ?? '-' }}</td>
+                                            </tr>
+                                        @elseif($solicitud->tipo_solicitud === 'pedido_mensual')
+                                            <tr class="hover:bg-gray-50">
+                                                <td class="border border-gray-300 px-4 py-2">{{ $item['codigo'] ?? '-' }}</td>
+                                                <td class="border border-gray-300 px-4 py-2">{{ $item['descripcion'] ?? '-' }}</td>
+                                                <td class="border border-gray-300 px-4 py-2 text-center">{{ $item['cantidad'] ?? '-' }}</td>
+                                                <td class="border border-gray-300 px-4 py-2">{{ $item['bodega'] ?? '-' }}</td>
+                                            </tr>
+                                        @elseif($solicitud->tipo_solicitud === 'salida_insumos')
+                                            <tr>
+                                                <td class="border px-4 py-2">{{ $item['codigo'] ?? '-' }}</td>
+                                                <td class="border px-4 py-2">{{ $item['descripcion'] ?? '-' }}</td>
+                                                <td class="border px-4 py-2">{{ $item['cantidad'] ?? '-' }}</td>
+                                                <td class="border px-4 py-2">{{ $item['area_consumo'] ?? '-' }}</td>
+                                                <td class="border px-4 py-2">{{ $item['centro_costos_item'] ?? '-' }}</td>
+                                            </tr>
+                                        @endif
+                                    @endforeach
+                                @endif
+                            </tbody>
+                        </table>
+                    </div>
+                @else
+                    <p class="text-gray-500 text-center py-6">No hay items registrados.</p>
+                @endif
+
+                @php
+                    $observaciones = $solicitud->descripcion;
+                    if (strpos($observaciones, 'Items solicitados:') !== false) {
+                        $observaciones = trim(explode('Items solicitados:', $observaciones)[0]);
+                    }
+                @endphp
+
+                @if($observaciones && $observaciones != '')
+                    <div class="mt-4 p-4 bg-gray-50 rounded-lg">
+                        <h4 class="font-semibold text-gray-700 mb-2">Observaciones:</h4>
+                        <p class="text-gray-600">{{ $observaciones }}</p>
+                    </div>
+                @endif
+
+                @if($solicitud->archivo)
+                    <div class="mt-4">
+                        <a href="{{ url('storage/' . $solicitud->archivo) }}" 
+                           target="_blank"
+                           class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
+                            📎 Ver archivo adjunto
+                        </a>
+                    </div>
+                @endif
             </div>
-        </div>
-
-        <!-- Cambiar Estado (Solo Admin) -->
-        @if(Auth::user()->esAdminCompras())
-        <div class="status-form">
-            <form action="{{ route('solicitudes.updateStatus', $solicitud) }}" method="POST">
-                @csrf
-                @method('PATCH')
-                <div class="form-group">
-                    <label>Cambiar Estado:</label>
-                    <select name="estado" class="form-control" onchange="this.form.submit()">
-                        <option value="pendiente" {{ $solicitud->estado == 'pendiente' ? 'selected' : '' }}>⏳ Pendiente</option>
-                        <option value="en_proceso" {{ $solicitud->estado == 'en_proceso' ? 'selected' : '' }}>🔄 En Proceso</option>
-                        <option value="finalizada" {{ $solicitud->estado == 'finalizada' ? 'selected' : '' }}>✅ Finalizada</option>
-                    </select>
-                </div>
-            </form>
-        </div>
-        @endif
-
-        <!-- Items Solicitados -->
-        <div class="items-section">
-            <h2>Ítems Solicitados</h2>
-            @php
-                $itemsTabla = $solicitud->items;
-                $itemsJson = [];
-                if ($itemsTabla->isEmpty() && strpos($solicitud->descripcion, 'Items solicitados:') !== false) {
-                    $partes = explode('Items solicitados:', $solicitud->descripcion);
-                    $itemsJsonString = trim($partes[1] ?? '');
-                    $itemsJson = json_decode($itemsJsonString, true) ?? [];
-                }
-            @endphp
-
-            @if($itemsTabla->isNotEmpty() || !empty($itemsJson))
-            <table class="items-table">
-                <thead>
-                    <tr>
-                        @if($solicitud->tipo_solicitud === 'estandar')
-                            <th>Referencia</th>
-                            <th>Unidad</th>
-                            <th>Descripción</th>
-                            <th>Cantidad</th>
-                        @elseif($solicitud->tipo_solicitud === 'pedido_mensual')
-                            <th>Código</th>
-                            <th>Descripción</th>
-                            <th>Cantidad</th>
-                            <th>Bodega</th>
-                        @elseif($solicitud->tipo_solicitud === 'salida_insumos')
-                            <th>Código</th>
-                            <th>Descripción</th>
-                            <th>Cantidad</th>
-                            <th>Área de Consumo</th>
-                            <th>Centro de Costos</th>
-                        @endif
-                    </tr>
-                </thead>
-                <tbody>
-                    @if($itemsTabla->isNotEmpty())
-                        @foreach($itemsTabla as $item)
-                            @if($solicitud->tipo_solicitud === 'estandar')
-                                <tr>
-                                    <td>{{ $item->referencia ?? '-' }}</td>
-                                    <td>{{ $item->unidad ?? '-' }}</td>
-                                    <td>{{ $item->descripcion ?? '-' }}</td>
-                                    <td>{{ $item->cantidad ?? '-' }}</td>
-                                </tr>
-                            @elseif($solicitud->tipo_solicitud === 'pedido_mensual')
-                                <tr>
-                                    <td>{{ $item->codigo ?? '-' }}</td>
-                                    <td>{{ $item->descripcion ?? '-' }}</td>
-                                    <td>{{ $item->cantidad ?? '-' }}</td>
-                                    <td>{{ $item->bodega ?? '-' }}</td>
-                                </tr>
-                            @elseif($solicitud->tipo_solicitud === 'salida_insumos')
-                                <tr>
-                                    <td>{{ $item->codigo ?? '-' }}</td>
-                                    <td>{{ $item->descripcion ?? '-' }}</td>
-                                    <td>{{ $item->cantidad ?? '-' }}</td>
-                                    <td>{{ $item->area_consumo ?? '-' }}</td>
-                                    <td>{{ $item->centro_costos_item ?? '-' }}</td>
-                                </tr>
-                            @endif
-                        @endforeach
-                    @else
-                        @foreach($itemsJson as $item)
-                            @if($solicitud->tipo_solicitud === 'estandar')
-                                <tr>
-                                    <td>{{ $item['referencia'] ?? '-' }}</td>
-                                    <td>{{ $item['unidad'] ?? '-' }}</td>
-                                    <td>{{ $item['descripcion'] ?? '-' }}</td>
-                                    <td>{{ $item['cantidad'] ?? '-' }}</td>
-                                </tr>
-                            @elseif($solicitud->tipo_solicitud === 'pedido_mensual')
-                                <tr>
-                                    <td>{{ $item['codigo'] ?? '-' }}</td>
-                                    <td>{{ $item['descripcion'] ?? '-' }}</td>
-                                    <td>{{ $item['cantidad'] ?? '-' }}</td>
-                                    <td>{{ $item['bodega'] ?? '-' }}</td>
-                                </tr>
-                            @elseif($solicitud->tipo_solicitud === 'salida_insumos')
-                                <tr>
-                                    <td>{{ $item['codigo'] ?? '-' }}</td>
-                                    <td>{{ $item['descripcion'] ?? '-' }}</td>
-                                    <td>{{ $item['cantidad'] ?? '-' }}</td>
-                                    <td>{{ $item['area_consumo'] ?? '-' }}</td>
-                                    <td>{{ $item['centro_costos_item'] ?? '-' }}</td>
-                                </tr>
-                            @endif
-                        @endforeach
-                    @endif
-                </tbody>
-            </table>
-            @else
-            <p style="color: #666; text-align: center; padding: 20px;">No hay items registrados.</p>
-            @endif
-
-            @php
-                $observaciones = $solicitud->descripcion;
-                if (strpos($observaciones, 'Items solicitados:') !== false) {
-                    $observaciones = trim(explode('Items solicitados:', $observaciones)[0]);
-                }
-            @endphp
-
-            @if($observaciones && $observaciones != '')
-            <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
-                <strong>Observaciones:</strong>
-                <p>{{ $observaciones }}</p>
-            </div>
-            @endif
-
-            @if($solicitud->archivo)
-            <div style="margin-top: 15px;">
-                <a href="{{ asset('storage/' . $solicitud->archivo) }}" target="_blank" class="btn btn-secondary">
-                    📎 Ver archivo adjunto
-                </a>
-            </div>
-            @endif
         </div>
 
         <!-- Comentarios -->
-        <div class="comments-section">
-            <h2>Comentarios</h2>
-            @forelse($solicitud->comentarios as $comentario)
-            <div class="comment {{ $comentario->user->esAdminCompras() ? 'admin' : 'user' }}">
-                <div class="comment-header">
-                    <span class="comment-author">
-                        {{ $comentario->user->name }}
-                        @if($comentario->user->esAdminCompras())
-                        <span class="badge" style="background: #28a745;">Admin</span>
-                        @endif
-                    </span>
-                    <span>{{ $comentario->created_at->format('d/m/Y H:i') }}</span>
-                </div>
-                <div class="comment-body">
-                    {{ $comentario->comentario }}
-                </div>
-            </div>
-            @empty
-            <p style="color: #666; text-align: center; padding: 20px;">
-                No hay comentarios aún. ¡Sé el primero en comentar!
-            </p>
-            @endforelse
-
-            <!-- Formulario para agregar comentario -->
-            <div class="comment-form">
-                <h3>Agregar Comentario</h3>
-                <form action="{{ route('comentarios.store', $solicitud) }}" method="POST">
-                    @csrf
-                    <div class="form-group">
-                        <textarea name="comentario" class="form-control" placeholder="Escribe tu comentario aquí..." required></textarea>
-                        @error('comentario')
-                        <span style="color: red; font-size: 14px;">{{ $message }}</span>
-                        @enderror
+        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="p-6 bg-white">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Comentarios</h2>
+                
+                @forelse($solicitud->comentarios as $comentario)
+                    <div class="mb-4 p-4 rounded-lg border-l-4 
+                        {{ $comentario->user->esAdminCompras() ? 'bg-green-50 border-green-500' : 'bg-purple-50 border-purple-500' }}">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <span class="font-bold text-gray-800">{{ $comentario->user->name }}</span>
+                                @if($comentario->user->esAdminCompras())
+                                    <span class="ml-2 px-2 py-1 bg-green-600 text-white text-xs font-semibold rounded">Admin</span>
+                                @endif
+                            </div>
+                            <span class="text-sm text-gray-500">{{ $comentario->created_at->format('d/m/Y H:i') }}</span>
+                        </div>
+                        <p class="text-gray-700">{{ $comentario->comentario }}</p>
                     </div>
-                    <button type="submit" class="btn btn-primary">Enviar Comentario</button>
-                </form>
+                @empty
+                    <p class="text-gray-500 text-center py-6">
+                        No hay comentarios aún. ¡Sé el primero en comentar!
+                    </p>
+                @endforelse
+
+                <!-- Formulario de comentario -->
+                <div class="mt-6 p-6 bg-gray-50 rounded-lg">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">Agregar Comentario</h3>
+                    <form action="{{ route('comentarios.store', $solicitud) }}" method="POST">
+                        @csrf
+                        <div class="mb-4">
+                            <textarea name="comentario" 
+                                      rows="4"
+                                      class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      placeholder="Escribe tu comentario aquí..." 
+                                      required></textarea>
+                            @error('comentario')
+                                <span class="text-red-600 text-sm">{{ $message }}</span>
+                            @enderror
+                        </div>
+                        <button type="submit" class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
+                            Enviar Comentario
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
+
     </div>
-</body>
-</html>
+</div>
+@endsection
