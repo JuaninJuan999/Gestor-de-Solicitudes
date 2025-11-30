@@ -1,10 +1,31 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="py-12">
+<!-- Contenedor con fondo de imagen -->
+<div style="background-image: url('/images/create-solicitud.jpg'); 
+            background-size: cover; 
+            background-position: center; 
+            background-attachment: fixed; 
+            background-repeat: no-repeat;
+            min-height: calc(100vh - 80px);
+            padding-top: 3rem;
+            padding-bottom: 3rem;">
+    
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-            <div class="p-6 bg-white border-b border-gray-200">
+        
+        <!-- Botón Volver -->
+        <div class="mb-6">
+            <a href="{{ route('solicitudes.create') }}" 
+               class="inline-flex items-center px-6 py-2 bg-gray-600 bg-opacity-70 text-white font-semibold rounded-lg hover:bg-gray-700 transition shadow-lg"
+               style="backdrop-filter: blur(10px);">
+                ← Volver
+            </a>
+        </div>
+
+        <!-- Tarjeta principal (70% transparente) -->
+        <div class="bg-white bg-opacity-70 overflow-hidden shadow-2xl sm:rounded-lg"
+             style="backdrop-filter: blur(10px);">
+            <div class="p-6 border-b border-gray-200">
                 
                 <h2 class="text-2xl font-bold text-blue-600 mb-6">Solicitud de Pedido - Salida de Insumos</h2>
 

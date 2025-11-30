@@ -2,10 +2,22 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="py-12">
+<!-- Contenedor con fondo de imagen -->
+<div style="background-image: url('/images/create-solicitud.jpg'); 
+            background-size: cover; 
+            background-position: center; 
+            background-attachment: fixed; 
+            background-repeat: no-repeat;
+            min-height: calc(100vh - 80px);
+            padding-top: 3rem;
+            padding-bottom: 3rem;">
+    
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-            <div class="p-6 bg-white border-b border-gray-200">
+        
+        <!-- Tarjeta principal (70% transparente) -->
+        <div class="bg-white bg-opacity-70 overflow-hidden shadow-2xl sm:rounded-lg"
+             style="backdrop-filter: blur(10px);">
+            <div class="p-6 border-b border-gray-200">
                
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-3xl font-bold text-blue-600">Mis Solicitudes</h2>
@@ -21,7 +33,7 @@
                     </div>
                 @endif
 
-                <div class="mb-6 bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-500 rounded-lg p-5 shadow-md">
+                <div class="mb-6 bg-white bg-opacity-80 border-2 border-green-500 rounded-lg p-5 shadow-md">
                     <form method="GET" action="{{ route('solicitudes.index') }}" class="flex flex-wrap gap-4 items-end">
                         <div class="flex-1 min-w-[250px]">
                             <label for="estado" class="block text-sm font-bold text-gray-700 mb-2">
@@ -76,8 +88,8 @@
                 @endif
 
                 @if($solicitudes->isEmpty())
-                    <div class="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-                        <p class="text-gray-500 text-lg font-semibold">
+                    <div class="text-center py-12 bg-white bg-opacity-60 rounded-lg border-2 border-dashed border-gray-300">
+                        <p class="text-gray-700 text-lg font-semibold">
                             @if(request('estado'))
                                 ⚠️ No se encontraron solicitudes con el estado seleccionado.
                             @else
@@ -94,7 +106,8 @@
                 @else
                     <div class="space-y-6">
                         @foreach($solicitudes as $solicitud)
-                            <div class="border-2 border-gray-200 rounded-lg p-6 hover:border-blue-400 transition">
+                            <div class="bg-white bg-opacity-80 border-2 border-gray-200 rounded-lg p-6 hover:border-blue-400 transition shadow-md"
+                                 style="backdrop-filter: blur(5px);">
                                 <!-- Encabezado de la solicitud -->
                                 <div class="flex justify-between items-start mb-4">
                                     <div>
@@ -125,15 +138,15 @@
                                                     $colorTipo = 'bg-blue-700';
                                                 } elseif ($solicitud->tipo_solicitud == 'salida_insumos') {
                                                     $etiquetaTipo = 'Salida Insumos';
-                                                    $colorTipo = 'bg-yellow-600 text-black';
+                                                    $colorTipo = 'bg-yellow-600';
                                                 }
                                             @endphp
-                                            <span class="px-3 py-1 {{ $colorTipo }} rounded-lg text-sm font-semibold" style="color: white;">
+                                            <span class="px-3 py-1 {{ $colorTipo }} text-white rounded-lg text-sm font-semibold">
                                                 {{ $etiquetaTipo }}
                                             </span>
                                         </div>
                                         <h3 class="text-xl font-bold text-gray-800">{{ $solicitud->titulo }}</h3>
-                                        <p class="text-sm text-gray-500 mt-1">
+                                        <p class="text-sm text-gray-600 mt-1">
                                             Fecha: {{ $solicitud->created_at->format('d/m/Y H:i') }}
                                         </p>
                                     </div>
@@ -256,7 +269,7 @@
                                                             <th class="border px-4 py-2">CENTRO DE COSTOS</th>
                                                         </tr>
                                                     </thead>
-                                                    <tbody>
+                                                    <tbody class="bg-white">
                                                         @if($itemsTabla->isNotEmpty())
                                                             @foreach($itemsTabla as $item)
                                                                 <tr>
