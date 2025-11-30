@@ -4,8 +4,12 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 use App\Models\Solicitud;
 use App\Models\CentroCosto;
+use App\Models\User;
+use App\Mail\NuevaSolicitudAdminMail;
+use App\Mail\CambioEstadoSolicitudMail;
 
 class SolicitudController extends Controller
 {
@@ -39,7 +43,7 @@ class SolicitudController extends Controller
         $centrosCostos = CentroCosto::orderBy('departamento')->get();
 
         // Si no hay tipo seleccionado, mostrar la pantalla de selección
-        if (! $tipo) {
+        if (!$tipo) {
             return view('solicitudes.select-type');
         }
 
@@ -59,6 +63,7 @@ class SolicitudController extends Controller
     /**
      * Guarda una nueva solicitud en la base de datos.
      * Maneja diferentes tipos de solicitud.
+     * Envía correo a los admins notificando la nueva solicitud.
      */
     public function store(Request $request)
     {
@@ -119,6 +124,15 @@ class SolicitudController extends Controller
             }
         }
 
+        // === ENVÍO DE CORREO A ADMINS POR NUEVA SOLICITUD ===
+        $admins = User::where('is_admin', true)->get();
+        foreach ($admins as $admin) {
+            if ($admin->email) {
+                Mail::to($admin->email)->send(new NuevaSolicitudAdminMail($solicitud));
+            }
+        }
+        // ====================================================
+
         return redirect()
             ->route('solicitudes.index')
             ->with('success', 'Solicitud registrada correctamente con consecutivo: ' . $consecutivo);
@@ -130,7 +144,7 @@ class SolicitudController extends Controller
     public function show(Solicitud $solicitud)
     {
         // Admin de compras puede ver todas; usuario normal solo sus propias solicitudes
-        if (! Auth::user()->esAdminCompras() && $solicitud->user_id !== Auth::id()) {
+        if (!Auth::user()->esAdminCompras() && $solicitud->user_id !== Auth::id()) {
             abort(403, 'No tienes permiso para ver esta solicitud');
         }
 
@@ -141,21 +155,31 @@ class SolicitudController extends Controller
 
     /**
      * Actualizar el estado de una solicitud (solo admin).
-     * Esta ruta está pensada para administración desde la vista de detalle.
+     * Envía correo al usuario cuando cambia el estado.
      */
     public function updateStatus(Request $request, Solicitud $solicitud)
     {
-        if (! Auth::user()->esAdminCompras()) {
+        if (!Auth::user()->esAdminCompras()) {
             abort(403, 'No tienes permiso para cambiar el estado');
         }
 
         $request->validate([
             'estado' => 'required|in:pendiente,en_proceso,finalizada,rechazada',
+            'comentario' => 'nullable|string',
         ]);
 
         $solicitud->update([
             'estado' => $request->estado,
         ]);
+
+        // === ENVÍO DE CORREO AL USUARIO POR CAMBIO DE ESTADO ===
+        $comentario = $request->comentario ?? null;
+
+        if ($solicitud->user && $solicitud->user->email) {
+            Mail::to($solicitud->user->email)
+                ->send(new CambioEstadoSolicitudMail($solicitud, $comentario));
+        }
+        // =======================================================
 
         return redirect()->back()->with('success', 'Estado actualizado exitosamente');
     }
