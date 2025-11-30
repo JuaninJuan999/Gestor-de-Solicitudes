@@ -9,27 +9,35 @@
 </head>
 
 <body class="flex flex-col min-h-screen">
+    <!-- HEADER -->
     <header class="bg-white border-b shadow-sm">
         <div class="max-w-7xl mx-auto px-6 py-3">
-            <div class="grid grid-cols-3 items-center">
-                <!-- Columna izquierda: Logo y título -->
+            <div class="flex items-center justify-between gap-6">
+                <!-- Izquierda: Logo y título -->
                 <div class="flex items-center space-x-3">
                     <img src="{{ asset('images/compras.png') }}" alt="Logo" class="h-8 w-auto">
                     <h2 class="text-lg font-bold text-gray-800">Gestor de Solicitudes</h2>
                 </div>
 
-                <!-- Columna centro: Botón DASHBOARD -->
-                <div class="flex justify-center">
+                <!-- Centro: Carrusel de logos (una sola línea) -->
+                <div class="flex-1 flex justify-center">
+                    <div id="logosCarousel" class="h-10 flex items-center justify-center">
+                        <img id="logoSlide" 
+                             src="{{ asset('images/logos/logo1.png') }}" 
+                             alt="Logo institucional" 
+                             class="h-10 w-auto object-contain transition-opacity duration-500 opacity-100">
+                    </div>
+                </div>
+
+                <!-- Derecha: DASHBOARD + Cerrar sesión en línea -->
+                <div class="flex items-center space-x-4">
                     @auth
                         <a href="{{ route('dashboard') }}" 
                            class="px-6 py-2 bg-gray-100 border-2 border-gray-300 rounded-lg hover:bg-gray-200 hover:border-gray-400 transition">
                             <span class="text-xl font-bold text-gray-700">📊 DASHBOARD</span>
                         </a>
                     @endauth
-                </div>
 
-                <!-- Columna derecha: Botón cerrar sesión -->
-                <div class="flex justify-end">
                     @if (Route::has('login'))
                         @auth
                             <form action="{{ route('logout') }}" method="POST">
@@ -51,6 +59,7 @@
         </div>
     </header>
     
+    <!-- CONTENIDO -->
     <main class="flex-grow">
         @if(request()->routeIs('solicitudes.*'))
             {{-- Fondo y overlay solo para vistas de solicitudes --}}
@@ -64,7 +73,7 @@
         @endif
     </main>
 
-    <!-- FOOTER - CRÉDITOS DEL DESARROLLADOR -->
+    <!-- FOOTER -->
     <footer class="bg-gray-800 text-white py-4 mt-auto">
         <div class="max-w-7xl mx-auto px-6 text-center">
             <p class="text-sm font-medium">
@@ -72,5 +81,32 @@
             </p>
         </div>
     </footer>
+
+    <!-- Script carrusel de logos -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const logos = [
+                "{{ asset('images/logos/logo1.png') }}",
+                "{{ asset('images/logos/logo2.png') }}",
+                "{{ asset('images/logos/logo3.png') }}",
+                "{{ asset('images/logos/logo4.png') }}",
+                "{{ asset('images/logos/logo5.png') }}",
+            ];
+
+            const img = document.getElementById('logoSlide');
+            let index = 0;
+
+            if (!img || logos.length === 0) return;
+
+            setInterval(() => {
+                img.classList.add('opacity-0');
+                setTimeout(() => {
+                    index = (index + 1) % logos.length;
+                    img.src = logos[index];
+                    img.classList.remove('opacity-0');
+                }, 500); // tiempo de fade-out
+            }, 3000); // cambia cada 3 segundos
+        });
+    </script>
 </body>
 </html>
