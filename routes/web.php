@@ -39,11 +39,14 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // Rutas para administradores de compras
-Route::middleware(['auth', 'is_admin'])->prefix('admin')->group(function () {
-    Route::get('/solicitudes', [AdminComprasController::class, 'index'])->name('admin.solicitudes.index');
-    Route::post('/solicitudes/{id}/estado', [AdminComprasController::class, 'actualizarEstado'])->name('admin.solicitudes.estado');
+Route::middleware(['auth', 'is_admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/solicitudes', [AdminComprasController::class, 'index'])->name('solicitudes.index');
+    Route::post('/solicitudes/{id}/estado', [AdminComprasController::class, 'actualizarEstado'])->name('solicitudes.estado');
+    
+    // === NUEVAS RUTAS DE REPORTES ===
+    Route::get('/reportes', [SolicitudController::class, 'reportes'])->name('reportes');
+    Route::get('/reportes/export', [SolicitudController::class, 'exportReport'])->name('reportes.export');
 });
 
 // Incluir las rutas de autenticación (login, register, password, etc.)
 require __DIR__.'/auth.php';
-

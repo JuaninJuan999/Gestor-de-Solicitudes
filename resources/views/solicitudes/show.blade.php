@@ -89,31 +89,6 @@
             </div>
         </div>
 
-        <!-- Cambiar estado (solo admin) -->
-        @if(Auth::user()->esAdminCompras())
-            <div class="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-6 mb-6">
-                <h3 class="text-lg font-bold text-yellow-800 mb-3">Cambiar Estado de la Solicitud</h3>
-                <form action="{{ route('solicitudes.updateStatus', $solicitud) }}" method="POST">
-                    @csrf
-                    @method('PATCH')
-                    <div class="flex gap-4 items-end">
-                        <div class="flex-1">
-                            <label for="estado" class="block text-sm font-bold text-gray-700 mb-2">Nuevo Estado:</label>
-                            <select name="estado" id="estado" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500">
-                                <option value="pendiente" {{ $solicitud->estado == 'pendiente' ? 'selected' : '' }}>⏳ Pendiente</option>
-                                <option value="en_proceso" {{ $solicitud->estado == 'en_proceso' ? 'selected' : '' }}>🔄 En Proceso</option>
-                                <option value="finalizada" {{ $solicitud->estado == 'finalizada' ? 'selected' : '' }}>✅ Finalizada</option>
-                                <option value="rechazada" {{ $solicitud->estado == 'rechazada' ? 'selected' : '' }}>❌ Rechazada</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="px-6 py-2 bg-yellow-600 text-white font-semibold rounded-lg hover:bg-yellow-700 transition">
-                            Actualizar Estado
-                        </button>
-                    </div>
-                </form>
-            </div>
-        @endif
-
         <!-- Items solicitados -->
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
             <div class="p-6 bg-white border-b border-gray-200">
@@ -289,6 +264,35 @@
                         </button>
                     </form>
                 </div>
+
+                <!-- Cambiar estado (solo admin) - MOVIDO AQUÍ ABAJO -->
+                @if(Auth::user()->esAdminCompras())
+                    <div class="mt-6 bg-yellow-50 border-2 border-yellow-400 rounded-lg p-6">
+                        <h3 class="text-lg font-bold text-yellow-800 mb-3">Cambiar Estado de la Solicitud</h3>
+                        <form action="{{ route('solicitudes.updateStatus', $solicitud) }}" method="POST">
+                            @csrf
+                            @method('PATCH')
+                            
+                            <!-- Selector de estado -->
+                            <div class="mb-4">
+                                <label for="estado" class="block text-sm font-bold text-gray-700 mb-2">Nuevo Estado:</label>
+                                <select name="estado" id="estado" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500">
+                                    <option value="pendiente" {{ $solicitud->estado == 'pendiente' ? 'selected' : '' }}>⏳ Pendiente</option>
+                                    <option value="en_proceso" {{ $solicitud->estado == 'en_proceso' ? 'selected' : '' }}>🔄 En Proceso</option>
+                                    <option value="finalizada" {{ $solicitud->estado == 'finalizada' ? 'selected' : '' }}>✅ Finalizada</option>
+                                    <option value="rechazada" {{ $solicitud->estado == 'rechazada' ? 'selected' : '' }}>❌ Rechazada</option>
+                                </select>
+                            </div>
+
+                            <!-- boton actualizar estado -->
+                    
+                            <button type="submit" class="w-full px-6 py-3 bg-yellow-600 text-white font-semibold rounded-lg hover:bg-yellow-700 transition shadow-lg">
+                                📧 Actualizar Estado y Notificar al Usuario
+                            </button>
+                        </form>
+                    </div>
+                @endif
+
             </div>
         </div>
 

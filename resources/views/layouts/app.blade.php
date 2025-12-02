@@ -10,7 +10,7 @@
 
 <body class="flex flex-col min-h-screen">
     <!-- HEADER -->
-    <header class="bg-white border-b shadow-sm">
+    <header class="bg-white bg-opacity-70 backdrop-blur-md border-b border-white/20 shadow-xl">
         <div class="max-w-7xl mx-auto px-6 py-3">
             <div class="flex items-center justify-between gap-6">
                 <!-- Izquierda: Logo y título -->
@@ -33,7 +33,7 @@
                 <div class="flex items-center space-x-4">
                     @auth
                         <a href="{{ route('dashboard') }}" 
-                           class="px-6 py-2 bg-gray-100 border-2 border-gray-300 rounded-lg hover:bg-gray-200 hover:border-gray-400 transition">
+                           class="px-6 py-2 bg-gray-100 bg-opacity-70 backdrop-blur-md border-2 border-gray-300 border-opacity-50 rounded-lg hover:bg-opacity-90 hover:border-opacity-70 transition-all duration-300 shadow-lg">
                             <span class="text-xl font-bold text-gray-700">📊 DASHBOARD</span>
                         </a>
                     @endauth
@@ -43,7 +43,7 @@
                             <form action="{{ route('logout') }}" method="POST">
                                 @csrf
                                 <button type="submit" 
-                                        class="px-5 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-semibold">
+                                        class="px-5 py-2 bg-red-600 bg-opacity-70 backdrop-blur-md text-white rounded-lg hover:bg-opacity-90 transition-all duration-300 font-semibold shadow-lg">
                                     🚪 Cerrar sesión
                                 </button>
                             </form>
@@ -90,7 +90,7 @@
                 "{{ asset('images/logos/logo2.png') }}",
                 "{{ asset('images/logos/logo3.png') }}",
                 "{{ asset('images/logos/logo4.png') }}",
-                "{{ asset('images/logos/logo5.png') }}",
+                
             ];
 
             const img = document.getElementById('logoSlide');

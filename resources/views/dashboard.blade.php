@@ -29,7 +29,7 @@
         <!-- Tarjetas de acceso -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             
-            <!-- Tarjeta 1: Nueva Solicitud (70% transparente) -->
+            <!-- Tarjeta 1: Nueva Solicitud -->
             <div class="bg-white bg-opacity-70 p-6 rounded-lg shadow-xl hover:shadow-2xl transition transform hover:scale-105" 
                  style="backdrop-filter: blur(10px);">
                 <div class="text-5xl mb-4 text-center">📝</div>
@@ -47,7 +47,7 @@
                 </div>
             </div>
 
-            <!-- Tarjeta 2: Mis Solicitudes (70% transparente) -->
+            <!-- Tarjeta 2: Mis Solicitudes -->
             <div class="bg-white bg-opacity-70 p-6 rounded-lg shadow-xl hover:shadow-2xl transition transform hover:scale-105" 
                  style="backdrop-filter: blur(10px);">
                 <div class="text-5xl mb-4 text-center">📊</div>
@@ -65,7 +65,7 @@
                 </div>
             </div>
 
-            <!-- Tarjeta 3: Admin o Soporte (70% transparente) -->
+            <!-- Tarjeta 3: Admin / Soporte -->
             @if(auth()->check() && auth()->user()->is_admin)
                 <div class="bg-white bg-opacity-70 p-6 rounded-lg shadow-xl hover:shadow-2xl transition transform hover:scale-105" 
                      style="backdrop-filter: blur(10px);">
@@ -100,8 +100,31 @@
                     </div>
                 </div>
             @endif
-
         </div>
+
+        @if(auth()->check() && auth()->user()->is_admin)
+            <!-- Tarjeta 4: Reportes (solo admin) -->
+            <div class="mt-8">
+                <div class="bg-white bg-opacity-70 p-6 rounded-lg shadow-xl hover:shadow-2xl transition transform hover:scale-105"
+                     style="backdrop-filter: blur(10px);">
+                    <div class="flex items-center">
+                        <div class="text-5xl mr-4">📈</div>
+                        <div class="flex-1">
+                            <h4 class="text-xl font-bold text-gray-900 mb-1">
+                                Reportes y Exportación a Excel
+                            </h4>
+                            <p class="text-sm text-gray-700 mb-3">
+                                Analiza todas las solicitudes por estado, fechas y tipo. Exporta la información a Excel.
+                            </p>
+                            <a href="{{ route('admin.reportes') }}"
+                               class="inline-block px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition">
+                                Ir a reportes →
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
 
     </div>
 

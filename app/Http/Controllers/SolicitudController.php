@@ -10,6 +10,8 @@ use App\Models\CentroCosto;
 use App\Models\User;
 use App\Mail\NuevaSolicitudAdminMail;
 use App\Mail\CambioEstadoSolicitudMail;
+use App\Exports\SolicitudesExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class SolicitudController extends Controller
 {
@@ -237,5 +239,63 @@ class SolicitudController extends Controller
 
         return redirect()->route('solicitudes.index')->with('success', 'Solicitud eliminada correctamente');
     }
-}
 
+    /**
+     * Muestra la vista de reportes con filtros (solo admin).
+     */
+    public function reportes(Request $request)
+    {
+        if (!Auth::user()->esAdminCompras()) {
+            abort(403, 'No tienes permiso para ver reportes');
+        }
+
+        $query = Solicitud::with('user')->orderBy('created_at', 'desc');
+
+        // Filtros
+        if ($request->filled('fecha_inicio')) {
+            $query->whereDate('created_at', '>=', $request->fecha_inicio);
+        }
+        if ($request->filled('fecha_fin')) {
+            $query->whereDate('created_at', '<=', $request->fecha_fin);
+        }
+        if ($request->filled('estado')) {
+            $query->where('estado', $request->estado);
+        }
+        if ($request->filled('tipo_solicitud')) {
+            $query->where('tipo_solicitud', $request->tipo_solicitud);
+        }
+
+        $solicitudes = $query->paginate(20)->withQueryString();
+
+        // Estadísticas
+        $allSolicitudes = Solicitud::all();
+        $stats = [
+            'total' => $allSolicitudes->count(),
+            'pendiente' => $allSolicitudes->where('estado', 'pendiente')->count(),
+            'en_proceso' => $allSolicitudes->where('estado', 'en_proceso')->count(),
+            'finalizada' => $allSolicitudes->where('estado', 'finalizada')->count(),
+            'rechazada' => $allSolicitudes->where('estado', 'rechazada')->count(),
+        ];
+
+        return view('admin.reportes', compact('solicitudes', 'stats'));
+    }
+
+    /**
+     * Exporta el reporte a Excel (solo admin).
+     */
+    public function exportReport(Request $request)
+{
+    if (!Auth::user()->esAdminCompras()) {
+        abort(403, 'No tienes permiso para exportar reportes');
+    }
+
+    $export = new \App\Exports\SolicitudesExport(
+        $request->fecha_inicio,
+        $request->fecha_fin,
+        $request->estado,
+        $request->tipo_solicitud
+    );
+
+    return $export->download('reporte-solicitudes-' . now()->format('Y-m-d') . '.xlsx');
+}
+}

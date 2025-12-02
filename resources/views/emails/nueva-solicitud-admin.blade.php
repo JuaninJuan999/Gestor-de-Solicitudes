@@ -9,7 +9,7 @@ Se ha registrado una nueva solicitud en el sistema.
 - Usuario: **{{ $solicitud->user->name ?? 'N/A' }}**
 - Área solicitante: **{{ $solicitud->area_solicitante ?? 'N/A' }}**
 
-@component('mail::button', ['url' => route('admin.solicitudes.show', $solicitud->id)])
+@component('mail::button', ['url' => route('solicitudes.show', $solicitud->id)])
 Ver solicitud en el sistema
 @endcomponent
 
