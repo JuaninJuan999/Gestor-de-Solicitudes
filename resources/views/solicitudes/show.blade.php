@@ -22,7 +22,9 @@
         <!-- Encabezado de solicitud -->
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
             <div class="p-6 bg-white border-b border-gray-200">
-                <h1 class="text-3xl font-bold text-blue-600 mb-4">{{ $solicitud->ticket_id }}</h1>
+                <h1 class="text-3xl font-bold text-blue-600 mb-4">
+                    {{ $solicitud->consecutivo ?? $solicitud->ticket_id }}
+                </h1>
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="bg-gray-50 p-4 rounded-lg">
@@ -31,12 +33,14 @@
                             {{ $solicitud->user->area ?? 'Sin departamento' }}
                         </span>
                     </div>
+
                     <div class="bg-gray-50 p-4 rounded-lg">
                         <label class="block text-sm font-bold text-gray-700 mb-2">Solicitante:</label>
                         <span class="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm font-semibold">
                             👤 {{ $solicitud->user->name }}
                         </span>
                     </div>
+
                     @php
                         $etiquetaTipo = '';
                         $colorTipo = 'bg-gray-500';
@@ -51,12 +55,14 @@
                             $colorTipo = 'bg-yellow-600';
                         }
                     @endphp
+
                     <div class="bg-gray-50 p-4 rounded-lg">
                         <label class="block text-sm font-bold text-gray-700 mb-2">Tipo de Solicitud:</label>
                         <span class="px-3 py-1 {{ $colorTipo }} text-white rounded-lg text-sm font-semibold">
                             {{ $etiquetaTipo }}
                         </span>
                     </div>
+
                     <div class="bg-gray-50 p-4 rounded-lg">
                         <label class="block text-sm font-bold text-gray-700 mb-2">Estado:</label>
                         @if($solicitud->estado == 'pendiente')
@@ -81,9 +87,29 @@
                             </span>
                         @endif
                     </div>
+
+                    <!-- Fecha como etiqueta -->
                     <div class="bg-gray-50 p-4 rounded-lg">
                         <label class="block text-sm font-bold text-gray-700 mb-2">Fecha:</label>
-                        {{ $solicitud->created_at->format('d/m/Y H:i') }}
+                        <span class="px-3 py-1 bg-gray-200 text-gray-800 rounded-lg text-sm font-semibold">
+                            {{ $solicitud->created_at->format('d/m/Y h:i A') }}
+                        </span>
+                    </div>
+
+                    <!-- Centro de costos como etiqueta -->
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Centro de Costos:</label>
+                        <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-lg text-sm font-semibold">
+                            {{ $solicitud->centro_costos ?? 'Sin centro de costos' }}
+                        </span>
+                    </div>
+
+                    <!-- Título como etiqueta, ocupando toda la fila -->
+                    <div class="bg-gray-50 p-4 rounded-lg md:col-span-3">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Título de la Solicitud:</label>
+                        <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-lg text-sm font-semibold inline-block">
+                            {{ $solicitud->titulo ?? 'Sin título' }}
+                        </span>
                     </div>
                 </div>
             </div>
@@ -234,9 +260,19 @@
                                     <span class="ml-2 px-2 py-1 bg-green-600 text-white text-xs font-semibold rounded">Admin</span>
                                 @endif
                             </div>
-                            <span class="text-sm text-gray-500">{{ $comentario->created_at->format('d/m/Y H:i') }}</span>
+                            <span class="text-sm text-gray-500">{{ $comentario->created_at->format('d/m/Y h:i A') }}</span>
                         </div>
                         <p class="text-gray-700">{{ $comentario->comentario }}</p>
+
+                        @if($comentario->archivo)
+                            <div class="mt-2">
+                                <a href="{{ url('storage/' . $comentario->archivo) }}"
+                                   target="_blank"
+                                   class="inline-flex items-center px-3 py-1 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 transition">
+                                    📎 Ver archivo adjunto
+                                </a>
+                            </div>
+                        @endif
                     </div>
                 @empty
                     <p class="text-gray-500 text-center py-6">
@@ -247,7 +283,7 @@
                 <!-- Formulario de comentario -->
                 <div class="mt-6 p-6 bg-gray-50 rounded-lg">
                     <h3 class="text-lg font-bold text-gray-800 mb-4">Agregar Comentario</h3>
-                    <form action="{{ route('comentarios.store', $solicitud) }}" method="POST">
+                    <form action="{{ route('comentarios.store', $solicitud) }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <div class="mb-4">
                             <textarea name="comentario" 
@@ -259,13 +295,23 @@
                                 <span class="text-red-600 text-sm">{{ $message }}</span>
                             @enderror
                         </div>
+
+                        <div class="mb-4">
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Adjuntar archivo (opcional):</label>
+                            <input type="file" name="archivo"
+                                   class="block w-full text-sm text-gray-700 border-2 border-gray-300 rounded-lg cursor-pointer">
+                            @error('archivo')
+                                <span class="text-red-600 text-sm">{{ $message }}</span>
+                            @enderror
+                        </div>
+
                         <button type="submit" class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
                             Enviar Comentario
                         </button>
                     </form>
                 </div>
 
-                <!-- Cambiar estado (solo admin) - MOVIDO AQUÍ ABAJO -->
+                <!-- Cambiar estado (solo admin) -->
                 @if(Auth::user()->esAdminCompras())
                     <div class="mt-6 bg-yellow-50 border-2 border-yellow-400 rounded-lg p-6">
                         <h3 class="text-lg font-bold text-yellow-800 mb-3">Cambiar Estado de la Solicitud</h3>
@@ -273,7 +319,6 @@
                             @csrf
                             @method('PATCH')
                             
-                            <!-- Selector de estado -->
                             <div class="mb-4">
                                 <label for="estado" class="block text-sm font-bold text-gray-700 mb-2">Nuevo Estado:</label>
                                 <select name="estado" id="estado" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500">
@@ -284,8 +329,6 @@
                                 </select>
                             </div>
 
-                            <!-- boton actualizar estado -->
-                    
                             <button type="submit" class="w-full px-6 py-3 bg-yellow-600 text-white font-semibold rounded-lg hover:bg-yellow-700 transition shadow-lg">
                                 📧 Actualizar Estado y Notificar al Usuario
                             </button>

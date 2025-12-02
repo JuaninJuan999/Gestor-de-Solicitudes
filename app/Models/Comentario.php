@@ -13,6 +13,7 @@ class Comentario extends Model
         'solicitud_id',
         'user_id',
         'comentario',
+        'archivo',        // <-- nuevo campo
     ];
 
     protected $casts = [

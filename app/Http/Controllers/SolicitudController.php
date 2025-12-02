@@ -267,35 +267,55 @@ class SolicitudController extends Controller
 
         $solicitudes = $query->paginate(20)->withQueryString();
 
-        // Estadísticas
+        // Estadísticas generales
         $allSolicitudes = Solicitud::all();
         $stats = [
-            'total' => $allSolicitudes->count(),
-            'pendiente' => $allSolicitudes->where('estado', 'pendiente')->count(),
+            'total'      => $allSolicitudes->count(),
+            'pendiente'  => $allSolicitudes->where('estado', 'pendiente')->count(),
             'en_proceso' => $allSolicitudes->where('estado', 'en_proceso')->count(),
             'finalizada' => $allSolicitudes->where('estado', 'finalizada')->count(),
-            'rechazada' => $allSolicitudes->where('estado', 'rechazada')->count(),
+            'rechazada'  => $allSolicitudes->where('estado', 'rechazada')->count(),
         ];
 
-        return view('admin.reportes', compact('solicitudes', 'stats'));
+        // Estadísticas por tipo (para segunda gráfica)
+        $statsTipos = [
+            'estandar'       => $allSolicitudes->where('tipo_solicitud', 'estandar')->count(),
+            'pedido_mensual' => $allSolicitudes->where('tipo_solicitud', 'pedido_mensual')->count(),
+            'salida_insumos' => $allSolicitudes->where('tipo_solicitud', 'salida_insumos')->count(),
+        ];
+
+        // Estadísticas por mes (año actual) para la gráfica de línea
+        $solicitudesPorMes = Solicitud::selectRaw('MONTH(created_at) as mes, COUNT(*) as total')
+            ->whereYear('created_at', now()->year)
+            ->groupBy('mes')
+            ->orderBy('mes')
+            ->get();
+
+        $statsMeses = array_fill(1, 12, 0);
+        foreach ($solicitudesPorMes as $row) {
+            $statsMeses[$row->mes] = $row->total;
+        }
+
+        return view('admin.reportes', compact('solicitudes', 'stats', 'statsTipos', 'statsMeses'));
     }
 
     /**
      * Exporta el reporte a Excel (solo admin).
+     * (Actualmente usando clase personalizada con ->download()).
      */
     public function exportReport(Request $request)
-{
-    if (!Auth::user()->esAdminCompras()) {
-        abort(403, 'No tienes permiso para exportar reportes');
+    {
+        if (!Auth::user()->esAdminCompras()) {
+            abort(403, 'No tienes permiso para exportar reportes');
+        }
+
+        $export = new \App\Exports\SolicitudesExport(
+            $request->fecha_inicio,
+            $request->fecha_fin,
+            $request->estado,
+            $request->tipo_solicitud
+        );
+
+        return $export->download('reporte-solicitudes-' . now()->format('Y-m-d') . '.xlsx');
     }
-
-    $export = new \App\Exports\SolicitudesExport(
-        $request->fecha_inicio,
-        $request->fecha_fin,
-        $request->estado,
-        $request->tipo_solicitud
-    );
-
-    return $export->download('reporte-solicitudes-' . now()->format('Y-m-d') . '.xlsx');
-}
 }
