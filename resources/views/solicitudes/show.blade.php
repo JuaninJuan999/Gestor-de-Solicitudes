@@ -1,7 +1,6 @@
 {{-- Vista: Detalle de solicitud con comentarios --}}
 @extends('layouts.app')
 
-
 @section('content')
 <div class="py-12">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -136,12 +135,20 @@
                     }
                 @endphp
 
+                @if(Auth::user()->esAdminCompras())
+                    <form action="{{ route('solicitudes.updateChecklist', $solicitud) }}" method="POST">
+                        @csrf
+                @endif
+
                 @if($itemsTabla->isNotEmpty() || !empty($itemsJson))
                     <div class="overflow-x-auto bg-white/70 rounded-xl shadow mb-4">
                         @if($solicitud->tipo_solicitud == 'estandar')
                             <table class="min-w-full border-collapse border border-gray-300">
                                 <thead class="bg-green-600 text-white">
                                     <tr>
+                                        @if(Auth::user()->esAdminCompras())
+                                            <th class="border border-gray-300 px-4 py-2 text-center">✔</th>
+                                        @endif
                                         <th class="border border-gray-300 px-4 py-2 text-left">REFERENCIA</th>
                                         <th class="border border-gray-300 px-4 py-2 text-center">UNIDAD</th>
                                         <th class="border border-gray-300 px-4 py-2 text-left">DESCRIPCIÓN</th>
@@ -151,7 +158,16 @@
                                 <tbody class="bg-white">
                                     @if($itemsTabla->isNotEmpty())
                                         @foreach($itemsTabla as $item)
-                                            <tr class="hover:bg-gray-50">
+                                            <tr class="hover:bg-gray-50 {{ $item->revisado ? 'bg-green-50' : '' }}">
+                                                @if(Auth::user()->esAdminCompras())
+                                                    <td class="border border-gray-300 px-4 py-2 text-center">
+                                                        <input type="checkbox"
+                                                               name="items_revisados[]"
+                                                               value="{{ $item->id }}"
+                                                               class="w-4 h-4"
+                                                               {{ $item->revisado ? 'checked' : '' }}>
+                                                    </td>
+                                                @endif
                                                 <td class="border border-gray-300 px-4 py-2">{{ $item->referencia ?? '-' }}</td>
                                                 <td class="border border-gray-300 px-4 py-2 text-center">{{ $item->unidad ?? '-' }}</td>
                                                 <td class="border border-gray-300 px-4 py-2">{{ $item->descripcion ?? '-' }}</td>
@@ -174,6 +190,9 @@
                             <table class="min-w-full border-collapse border border-gray-300">
                                 <thead class="bg-blue-600 text-white">
                                     <tr>
+                                        @if(Auth::user()->esAdminCompras())
+                                            <th class="border border-gray-300 px-4 py-2 text-center">✔</th>
+                                        @endif
                                         <th class="border border-gray-300 px-4 py-2 text-left">CÓDIGO</th>
                                         <th class="border border-gray-300 px-4 py-2 text-left">DESCRIPCIÓN</th>
                                         <th class="border border-gray-300 px-4 py-2 text-center">CANTIDAD</th>
@@ -183,7 +202,16 @@
                                 <tbody class="bg-white">
                                     @if($itemsTabla->isNotEmpty())
                                         @foreach($itemsTabla as $item)
-                                            <tr class="hover:bg-gray-50">
+                                            <tr class="hover:bg-gray-50 {{ $item->revisado ? 'bg-green-50' : '' }}">
+                                                @if(Auth::user()->esAdminCompras())
+                                                    <td class="border border-gray-300 px-4 py-2 text-center">
+                                                        <input type="checkbox"
+                                                               name="items_revisados[]"
+                                                               value="{{ $item->id }}"
+                                                               class="w-4 h-4"
+                                                               {{ $item->revisado ? 'checked' : '' }}>
+                                                    </td>
+                                                @endif
                                                 <td class="border border-gray-300 px-4 py-2">{{ $item->codigo ?? '-' }}</td>
                                                 <td class="border border-gray-300 px-4 py-2">{{ $item->descripcion ?? '-' }}</td>
                                                 <td class="border border-gray-300 px-4 py-2 text-center">{{ $item->cantidad ?? '-' }}</td>
@@ -206,6 +234,9 @@
                             <table class="min-w-full border-collapse border border-gray-300">
                                 <thead class="bg-yellow-600 text-white">
                                     <tr>
+                                        @if(Auth::user()->esAdminCompras())
+                                            <th class="border px-4 py-2 text-center">✔</th>
+                                        @endif
                                         <th class="border px-4 py-2">CÓDIGO</th>
                                         <th class="border px-4 py-2">DESCRIPCIÓN</th>
                                         <th class="border px-4 py-2">CANTIDAD</th>
@@ -216,7 +247,16 @@
                                 <tbody class="bg-white">
                                     @if($itemsTabla->isNotEmpty())
                                         @foreach($itemsTabla as $item)
-                                            <tr>
+                                            <tr class="{{ $item->revisado ? 'bg-green-50' : '' }}">
+                                                @if(Auth::user()->esAdminCompras())
+                                                    <td class="border px-4 py-2 text-center">
+                                                        <input type="checkbox"
+                                                               name="items_revisados[]"
+                                                               value="{{ $item->id }}"
+                                                               class="w-4 h-4"
+                                                               {{ $item->revisado ? 'checked' : '' }}>
+                                                    </td>
+                                                @endif
                                                 <td class="border px-4 py-2">{{ $item->codigo ?? '-' }}</td>
                                                 <td class="border px-4 py-2">{{ $item->descripcion ?? '-' }}</td>
                                                 <td class="border px-4 py-2">{{ $item->cantidad ?? '-' }}</td>
@@ -239,8 +279,21 @@
                             </table>
                         @endif
                     </div>
+
+                    @if(Auth::user()->esAdminCompras() && $itemsTabla->isNotEmpty())
+                        <div class="mt-2">
+                            <button type="submit"
+                                class="px-6 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition">
+                                Guardar checklist
+                            </button>
+                        </div>
+                    @endif
                 @else
                     <p class="text-gray-500 text-center py-6">No hay items registrados.</p>
+                @endif
+
+                @if(Auth::user()->esAdminCompras())
+                    </form>
                 @endif
 
                 @if($observaciones && $observaciones != '')
@@ -261,7 +314,6 @@
                 @endif
             </div>
         </div>
-
         <!-- Comentarios -->
         <div class="overflow-hidden">
             <div class="p-6 bg-white/70 rounded-2xl shadow-lg">

@@ -85,7 +85,7 @@
                                             <input type="text" name="items[0][referencia]" class="w-full px-2 py-1 border rounded">
                                         </td>
                                         <td class="border border-gray-300 px-4 py-2">
-                                            <input type="number" name="items[0][unidad]" class="w-full px-2 py-1 border rounded">
+                                            <input type="text" name="items[0][unidad]" class="w-full px-2 py-1 border rounded">
                                         </td>
                                         <td class="border border-gray-300 px-4 py-2">
                                             <input type="text" name="items[0][descripcion]" class="w-full px-2 py-1 border rounded">
@@ -152,7 +152,7 @@
                     <input type="text" name="items[${filaIndex}][referencia]" class="w-full px-2 py-1 border rounded">
                 </td>
                 <td class="border border-gray-300 px-4 py-2">
-                    <input type="number" name="items[${filaIndex}][unidad]" class="w-full px-2 py-1 border rounded">
+                    <input type="text" name="items[${filaIndex}][unidad]" class="w-full px-2 py-1 border rounded">
                 </td>
                 <td class="border border-gray-300 px-4 py-2">
                     <input type="text" name="items[${filaIndex}][descripcion]" class="w-full px-2 py-1 border rounded">
