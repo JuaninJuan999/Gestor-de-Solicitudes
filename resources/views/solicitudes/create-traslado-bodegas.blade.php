@@ -1,5 +1,6 @@
 @extends('layouts.app')
 
+
 @section('content')
 <!-- Contenedor con fondo de imagen -->
 <div style="background-image: url('/images/create-solicitud.jpg'); 
@@ -22,18 +23,22 @@
             </a>
         </div>
 
+
         <!-- Tarjeta principal (70% transparente) -->
         <div class="bg-white bg-opacity-70 overflow-hidden shadow-2xl sm:rounded-lg"
              style="backdrop-filter: blur(10px);">
             <div class="p-6 border-b border-gray-200">
                 
-                <h2 class="text-2xl font-bold text-blue-600 mb-6">Registrar Pedido Mensual</h2>
+                <h2 class="text-2xl font-bold text-blue-600 mb-6">Registrar Traslados entre Bodegas</h2>
+
 
                 <form action="{{ route('solicitudes.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
 
+
                     <!-- Campo oculto para el tipo de solicitud -->
-                    <input type="hidden" name="tipo_solicitud" value="pedido_mensual">
+                    <input type="hidden" name="tipo_solicitud" value="traslado_bodegas">
+
 
                     <!-- Título -->
                     <div class="mb-6">
@@ -43,6 +48,7 @@
                         <input type="text" name="titulo" id="titulo" required
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                     </div>
+
 
                     <!-- Centro de Costos - Select agrupado -->
                     <div class="mb-6">
@@ -62,6 +68,7 @@
                             @endforeach
                         </select>
                     </div>
+
 
                     <!-- Tabla de items -->
                     <div class="mb-6">
@@ -109,10 +116,12 @@
                             </table>
                         </div>
 
+
                         <button type="button" onclick="agregarFila()" class="mt-3 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
                             + Agregar fila
                         </button>
                     </div>
+
 
                     <!-- Observaciones -->
                     <div class="mb-6">
@@ -123,6 +132,7 @@
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg"></textarea>
                     </div>
 
+
                     <!-- Archivo -->
                     <div class="mb-6">
                         <label for="archivo" class="block text-sm font-medium text-gray-700 mb-2">
@@ -130,6 +140,7 @@
                         </label>
                         <input type="file" name="archivo" id="archivo" class="w-full px-4 py-2 border rounded-lg">
                     </div>
+
 
                     <!-- Botones -->
                     <div class="flex gap-4">
@@ -146,10 +157,12 @@
     </div>
 </div>
 
+
 <script>
     let filaIndex = 1;
     // Convierte PHP/Blade a JS
     const areasBodega = @json($areasBodega);
+
 
     function agregarFila() {
         const tbody = document.getElementById('itemsTable');
@@ -183,6 +196,7 @@
         tbody.insertAdjacentHTML('beforeend', fila);
         filaIndex++;
     }
+
 
     function eliminarFila(boton) {
         const fila = boton.closest('tr');

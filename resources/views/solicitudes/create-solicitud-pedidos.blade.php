@@ -1,5 +1,6 @@
 @extends('layouts.app')
 
+
 @section('content')
 <!-- Contenedor con fondo de imagen -->
 <div style="background-image: url('/images/create-solicitud.jpg'); 
@@ -22,18 +23,22 @@
             </a>
         </div>
 
+
         <!-- Tarjeta principal (70% transparente) -->
         <div class="bg-white bg-opacity-70 overflow-hidden shadow-2xl sm:rounded-lg"
              style="backdrop-filter: blur(10px);">
             <div class="p-6 border-b border-gray-200">
                 
-                <h2 class="text-2xl font-bold text-blue-600 mb-6">Solicitud de Pedido - Salida de Insumos</h2>
+                <h2 class="text-2xl font-bold text-blue-600 mb-6">Registrar Solicitud de Pedidos</h2>
+
 
                 <form action="{{ route('solicitudes.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
 
+
                     <!-- Campo oculto para el tipo de solicitud -->
-                    <input type="hidden" name="tipo_solicitud" value="salida_insumos">
+                    <input type="hidden" name="tipo_solicitud" value="solicitud_pedidos">
+
 
                     <!-- Información del solicitante -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -49,6 +54,7 @@
                                 @endforeach
                             </select>
                         </div>
+
 
                         <!-- Centro de Costos (select agrupado por departamento) -->
                         <div>
@@ -70,6 +76,7 @@
                         </div>
                     </div>
 
+
                     <!-- Título -->
                     <div class="mb-6">
                         <label for="titulo" class="block text-sm font-medium text-gray-700 mb-2">
@@ -78,6 +85,7 @@
                         <input type="text" name="titulo" id="titulo" required
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                     </div>
+
 
                     <!-- Tabla de items -->
                     <div class="mb-6">
@@ -141,10 +149,12 @@
                             </table>
                         </div>
 
+
                         <button type="button" onclick="agregarFila()" class="mt-3 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
                             + Agregar fila
                         </button>
                     </div>
+
 
                     <!-- Observaciones -->
                     <div class="mb-6">
@@ -155,6 +165,7 @@
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg"></textarea>
                     </div>
 
+
                     <!-- Archivo -->
                     <div class="mb-6">
                         <label for="archivo" class="block text-sm font-medium text-gray-700 mb-2">
@@ -162,6 +173,7 @@
                         </label>
                         <input type="file" name="archivo" id="archivo" class="w-full px-4 py-2 border rounded-lg">
                     </div>
+
 
                     <!-- Botones -->
                     <div class="flex gap-4">
@@ -178,20 +190,24 @@
     </div>
 </div>
 
+
 <script>
 // Datos de centros de costos para sincronización
 const centrosCostosData = @json($centrosCostos);
 const areasBodega = @json($areasBodega);
 
+
 // Crear mapeo bidireccional: nombre_area <-> centro_costo (cc-sc)
 const areaToCentro = {};
 const centroToArea = {};
+
 
 centrosCostosData.forEach(item => {
     const centroKey = `${item.cc}-${item.sc}`;
     areaToCentro[item.nombre_area] = centroKey;
     centroToArea[centroKey] = item.nombre_area;
 });
+
 
 // Función para sincronizar área -> centro
 function syncAreaToCentro(areaSelect, centroSelect) {
@@ -201,6 +217,7 @@ function syncAreaToCentro(areaSelect, centroSelect) {
     }
 }
 
+
 // Función para sincronizar centro -> área
 function syncCentroToArea(centroSelect, areaSelect) {
     const selectedCentro = centroSelect.value;
@@ -208,6 +225,7 @@ function syncCentroToArea(centroSelect, areaSelect) {
         areaSelect.value = centroToArea[selectedCentro];
     }
 }
+
 
 // Aplicar eventos a la primera fila
 document.addEventListener('DOMContentLoaded', function() {
@@ -225,8 +243,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+
 // Agregar filas dinámicas
 let filaIndex = 1;
+
 
 function agregarFila() {
     const tbody = document.getElementById('itemsTable');
@@ -297,6 +317,7 @@ function agregarFila() {
     
     filaIndex++;
 }
+
 
 function eliminarFila(boton) {
     const fila = boton.closest('tr');

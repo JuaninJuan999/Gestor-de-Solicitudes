@@ -1,6 +1,7 @@
 {{-- Vista: Listado de solicitudes del usuario autenticado --}}
 @extends('layouts.app')
 
+
 @section('content')
 <!-- Contenedor con fondo de imagen -->
 <div style="background-image: url('/images/create-solicitud.jpg'); 
@@ -27,11 +28,13 @@
                     </a>
                 </div>
 
+
                 @if(session('success'))
                     <div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
                         {{ session('success') }}
                     </div>
                 @endif
+
 
                 <div class="mb-6 bg-white bg-opacity-80 border-2 border-green-500 rounded-lg p-5 shadow-md">
                     <form method="GET" action="{{ route('solicitudes.index') }}" class="flex flex-wrap gap-4 items-end">
@@ -69,6 +72,7 @@
                     </form>
                 </div>
 
+
                 @if(!$solicitudes->isEmpty())
                     <div class="mb-4 flex items-center gap-3">
                         <span class="px-4 py-2 bg-blue-100 text-blue-800 font-semibold rounded-lg text-sm">
@@ -86,6 +90,7 @@
                         @endif
                     </div>
                 @endif
+
 
                 @if($solicitudes->isEmpty())
                     <div class="text-center py-12 bg-white bg-opacity-60 rounded-lg border-2 border-dashed border-gray-300">
@@ -133,11 +138,11 @@
                                                 if ($solicitud->tipo_solicitud == 'estandar') {
                                                     $etiquetaTipo = 'Solicitud Estándar';
                                                     $colorTipo = 'bg-green-700';
-                                                } elseif ($solicitud->tipo_solicitud == 'pedido_mensual') {
-                                                    $etiquetaTipo = 'Pedido Mensual';
+                                                } elseif ($solicitud->tipo_solicitud == 'traslado_bodegas') {
+                                                    $etiquetaTipo = 'Traslados entre Bodegas';
                                                     $colorTipo = 'bg-blue-700';
-                                                } elseif ($solicitud->tipo_solicitud == 'salida_insumos') {
-                                                    $etiquetaTipo = 'Salida Insumos';
+                                                } elseif ($solicitud->tipo_solicitud == 'solicitud_pedidos') {
+                                                    $etiquetaTipo = 'Solicitud de Pedidos';
                                                     $colorTipo = 'bg-yellow-600';
                                                 }
                                             @endphp
@@ -175,6 +180,7 @@
                                     </div>
                                 </div>
 
+
                                 <!-- Tabla de items solicitados por tipo -->
                                 @php
                                     $itemsTabla = $solicitud->items ?? collect();
@@ -189,6 +195,7 @@
                                         $observaciones = $solicitud->descripcion;
                                     }
                                 @endphp
+
 
                                 @if($itemsTabla->isNotEmpty() || !empty($itemsJson))
                                     <div class="mb-4">
@@ -226,7 +233,7 @@
                                                         @endif
                                                     </tbody>
                                                 </table>
-                                            @elseif($solicitud->tipo_solicitud == 'pedido_mensual')
+                                            @elseif($solicitud->tipo_solicitud == 'traslado_bodegas')
                                                 <table class="min-w-full border-collapse border border-gray-300">
                                                     <thead class="bg-blue-600 text-white">
                                                         <tr>
@@ -258,7 +265,7 @@
                                                         @endif
                                                     </tbody>
                                                 </table>
-                                            @elseif($solicitud->tipo_solicitud == 'salida_insumos')
+                                            @elseif($solicitud->tipo_solicitud == 'solicitud_pedidos')
                                                 <table class="min-w-full border-collapse border border-gray-300">
                                                     <thead class="bg-yellow-600 text-white">
                                                         <tr>
@@ -298,6 +305,7 @@
                                     </div>
                                 @endif
 
+
                                 <!-- Observaciones -->
                                 @if(!empty($observaciones) && $observaciones != '')
                                     <div class="mb-4">
@@ -305,6 +313,7 @@
                                         <p class="text-gray-600">{{ $observaciones }}</p>
                                     </div>
                                 @endif
+
 
                                 <!-- Archivo adjunto -->
                                 @if($solicitud->archivo)
@@ -316,6 +325,7 @@
                                         </a>
                                     </div>
                                 @endif
+
 
                                 <!-- Botón Ver Detalle y Comentarios -->
                                 <div class="mt-4 pt-4 border-t border-gray-200">
@@ -331,6 +341,7 @@
                         {{ $solicitudes->links() }}
                     </div>
                 @endif
+
 
             </div>
         </div>

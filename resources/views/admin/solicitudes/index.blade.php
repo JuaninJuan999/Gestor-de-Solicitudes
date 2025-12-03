@@ -5,6 +5,7 @@
 --}}
 @extends('layouts.app')
 
+
 @section('content')
 <div class="py-12">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -59,8 +60,8 @@
                                     class="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition">
                                     <option value="">Todos los tipos</option>
                                     <option value="estandar" {{ request('tipo_solicitud') == 'estandar' ? 'selected' : '' }}>Solicitud Estándar</option>
-                                    <option value="pedido_mensual" {{ request('tipo_solicitud') == 'pedido_mensual' ? 'selected' : '' }}>Pedido Mensual</option>
-                                    <option value="salida_insumos" {{ request('tipo_solicitud') == 'salida_insumos' ? 'selected' : '' }}>Salida Insumos</option>
+                                    <option value="traslado_bodegas" {{ request('tipo_solicitud') == 'traslado_bodegas' ? 'selected' : '' }}>Traslados entre Bodegas</option>
+                                    <option value="solicitud_pedidos" {{ request('tipo_solicitud') == 'solicitud_pedidos' ? 'selected' : '' }}>Solicitud de Pedidos</option>
                                 </select>
                             </div>
                             <div>
@@ -119,8 +120,8 @@
                             @php
                                 $labelTipo = match(request('tipo_solicitud')) {
                                     'estandar' => 'Solicitud Estándar',
-                                    'pedido_mensual' => 'Pedido Mensual',
-                                    'salida_insumos' => 'Salida Insumos',
+                                    'traslado_bodegas' => 'Traslados entre Bodegas',
+                                    'solicitud_pedidos' => 'Solicitud de Pedidos',
                                     default => request('tipo_solicitud'),
                                 };
                             @endphp
@@ -166,20 +167,21 @@
 
                                             @php
                                                 $etiquetaTipo = '';
-                                                $colorTipo = 'bg-gray-500';
+                                                $colorTipo = 'bg-gray-500 text-white';
+
                                                 if ($solicitud->tipo_solicitud == 'estandar') {
                                                     $etiquetaTipo = 'Solicitud Estándar';
-                                                    $colorTipo = 'bg-green-700';
-                                                } elseif ($solicitud->tipo_solicitud == 'pedido_mensual') {
-                                                    $etiquetaTipo = 'Pedido Mensual';
-                                                    $colorTipo = 'bg-blue-700';
-                                                } elseif ($solicitud->tipo_solicitud == 'salida_insumos') {
-                                                    $etiquetaTipo = 'Salida Insumos';
-                                                    $colorTipo = 'bg-yellow-600 text-black';
+                                                    $colorTipo = 'bg-green-700 text-white';
+                                                } elseif ($solicitud->tipo_solicitud == 'traslado_bodegas') {
+                                                    $etiquetaTipo = 'Traslados entre Bodegas';
+                                                    $colorTipo = 'bg-blue-700 text-white';
+                                                } elseif ($solicitud->tipo_solicitud == 'solicitud_pedidos') {
+                                                    $etiquetaTipo = 'Solicitud de Pedidos';
+                                                    $colorTipo = 'bg-yellow-500 text-black';
                                                 }
                                             @endphp
-                                            <span class="px-3 py-1 {{ $colorTipo }} rounded-lg text-sm font-semibold" style="color: white;">
-                                                {{ $etiquetaTipo }}
+                                            <span class="px-3 py-1 rounded-lg text-sm font-semibold {{ $colorTipo }}">
+                                                {{ $etiquetaTipo ?: 'Sin tipo' }}
                                             </span>
                                         </div>
                                         <h3 class="text-xl font-bold text-gray-800">{{ $solicitud->titulo }}</h3>
@@ -251,7 +253,7 @@
                                                         @endif
                                                     </tbody>
                                                 </table>
-                                            @elseif($solicitud->tipo_solicitud == 'pedido_mensual')
+                                            @elseif($solicitud->tipo_solicitud == 'traslado_bodegas')
                                                 <table class="min-w-full border-collapse border border-gray-300">
                                                     <thead class="bg-blue-600 text-white">
                                                         <tr>
@@ -283,7 +285,7 @@
                                                         @endif
                                                     </tbody>
                                                 </table>
-                                            @elseif($solicitud->tipo_solicitud == 'salida_insumos')
+                                            @elseif($solicitud->tipo_solicitud == 'solicitud_pedidos')
                                                 <table class="min-w-full border-collapse border border-gray-300">
                                                     <thead class="bg-yellow-600 text-white">
                                                         <tr>

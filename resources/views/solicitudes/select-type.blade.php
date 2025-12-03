@@ -1,5 +1,6 @@
 @extends('layouts.app')
 
+
 @section('content')
 <div class="max-w-6xl mx-auto sm:px-6 lg:px-8 py-12">
     <div class="bg-white bg-opacity-30 backdrop-blur-sm overflow-hidden shadow-lg sm:rounded-2xl">
@@ -7,6 +8,7 @@
             
             <h2 class="text-2xl font-bold text-blue-1000 mb-2">Nueva Solicitud</h2>
             <p class="text-blue-100 mb-8">Selecciona el tipo de solicitud que deseas crear:</p>
+
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 
@@ -25,12 +27,13 @@
                     </div>
                 </a>
 
-                <!-- Opción 2: Pedido Mensual -->
-                <a href="{{ route('solicitudes.create', ['tipo' => 'pedido_mensual']) }}" 
+
+                <!-- Opción 2: Traslados entre Bodegas -->
+                <a href="{{ route('solicitudes.create', ['tipo' => 'traslado_bodegas']) }}" 
                    class="block p-6 bg-white bg-opacity-80 border-2 border-gray-300 rounded-lg hover:border-green-500 hover:shadow-lg transition duration-200">
                     <div class="flex flex-col items-center text-center">
                         <div class="text-5xl mb-4">📦</div>
-                        <h3 class="text-xl font-bold text-gray-800 mb-2">Pedido Mensual</h3>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Traslados entre Bodegas</h3>
                         <p class="text-sm text-gray-600 mb-4">
                             Formato con código, descripción, cantidad y bodega
                         </p>
@@ -40,12 +43,13 @@
                     </div>
                 </a>
 
-                <!-- Opción 3: Salida de Insumos -->
-                <a href="{{ route('solicitudes.create', ['tipo' => 'salida_insumos']) }}" 
+
+                <!-- Opción 3: Solicitud de Pedidos -->
+                <a href="{{ route('solicitudes.create', ['tipo' => 'solicitud_pedidos']) }}" 
                    class="block p-6 bg-white bg-opacity-80 border-2 border-gray-300 rounded-lg hover:border-yellow-500 hover:shadow-lg transition duration-200">
                     <div class="flex flex-col items-center text-center">
                         <div class="text-5xl mb-4">📤</div>
-                        <h3 class="text-xl font-bold text-gray-800 mb-2">Salida de Insumos</h3>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Solicitud de Pedidos</h3>
                         <p class="text-sm text-gray-600 mb-4">
                             Formato con código, área consumo y centro de costos
                         </p>
@@ -55,7 +59,9 @@
                     </div>
                 </a>
 
+
             </div>
+
 
             <!-- Botón Cancelar -->
             <div class="mt-8 text-center">
@@ -64,6 +70,7 @@
                     Cancelar
                 </a>
             </div>
+
 
         </div>
     </div>
