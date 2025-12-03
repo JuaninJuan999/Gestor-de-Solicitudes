@@ -50,6 +50,10 @@ Route::middleware(['auth', 'is_admin'])->prefix('admin')->name('admin.')->group(
     // === NUEVAS RUTAS DE REPORTES ===
     Route::get('/reportes', [SolicitudController::class, 'reportes'])->name('reportes');
     Route::get('/reportes/export', [SolicitudController::class, 'exportReport'])->name('reportes.export');
+
+    // === NUEVA RUTA: PDF solo ítems revisados de UNA solicitud ===
+    Route::get('/solicitudes/{solicitud}/pdf-revisados', [SolicitudController::class, 'exportPdfRevisados'])
+        ->name('solicitudes.pdf.revisados');
 });
 
 // Incluir las rutas de autenticación (login, register, password, etc.)

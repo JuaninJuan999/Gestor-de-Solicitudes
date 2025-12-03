@@ -6,11 +6,18 @@
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
         
         <!-- Botón volver -->
-        <div class="mb-6">
+        <div class="mb-6 flex items-center justify-between gap-4">
             <a href="{{ Auth::user()->esAdminCompras() ? route('admin.solicitudes.index') : route('solicitudes.index') }}" 
                class="px-6 py-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition">
                 ← Volver
             </a>
+
+            @if(Auth::user()->esAdminCompras())
+                <a href="{{ route('admin.solicitudes.pdf.revisados', $solicitud) }}"
+                   class="px-6 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition">
+                    📄 Descargar PDF solo ítems revisados
+                </a>
+            @endif
         </div>
 
         @if(session('success'))
@@ -314,6 +321,7 @@
                 @endif
             </div>
         </div>
+
         <!-- Comentarios -->
         <div class="overflow-hidden">
             <div class="p-6 bg-white/70 rounded-2xl shadow-lg">

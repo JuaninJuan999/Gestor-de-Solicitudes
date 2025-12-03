@@ -111,10 +111,10 @@
                         <div class="text-5xl mr-4">📈</div>
                         <div class="flex-1">
                             <h4 class="text-xl font-bold text-gray-900 mb-1">
-                                Reportes y Exportación a Excel
+                                Reportes e Indicadores
                             </h4>
                             <p class="text-sm text-gray-700 mb-3">
-                                Analiza todas las solicitudes por estado, fechas y tipo. Exporta la información a Excel.
+                                Analiza todas las solicitudes por estado, fechas y tipo. Exporta la información a Pdf/Excel.
                             </p>
                             <a href="{{ route('admin.reportes') }}"
                                class="inline-block px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition">

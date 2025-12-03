@@ -12,6 +12,7 @@ use App\Mail\NuevaSolicitudAdminMail;
 use App\Mail\CambioEstadoSolicitudMail;
 use App\Exports\SolicitudesExport;
 use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf; // <- NUEVA LÍNEA
 
 class SolicitudController extends Controller
 {
@@ -153,6 +154,31 @@ class SolicitudController extends Controller
         $solicitud->load(['user', 'items', 'comentarios.user']);
 
         return view('solicitudes.show', compact('solicitud'));
+    }
+
+    /**
+     * Exporta una sola solicitud a PDF con solo ítems revisados (solo admin de compras).
+     */
+    public function exportPdfRevisados(Solicitud $solicitud)
+    {
+        // Solo admin de compras
+        if (!Auth::user()->esAdminCompras()) {
+            abort(403, 'No tienes permiso para exportar esta solicitud a PDF');
+        }
+
+        $solicitud->load(['user', 'items']);
+
+        // Solo ítems con revisado = 1
+        $itemsRevisados = $solicitud->items->where('revisado', 1);
+
+        $pdf = Pdf::loadView('pdf.solicitud', [
+            'solicitud' => $solicitud,
+            'itemsRevisados' => $itemsRevisados,
+        ])->setPaper('letter', 'portrait');
+
+        $fileName = 'solicitud_' . $solicitud->consecutivo . '_revisados.pdf';
+
+        return $pdf->download($fileName);
     }
 
     /**
