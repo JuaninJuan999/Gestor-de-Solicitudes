@@ -47,11 +47,12 @@ Route::middleware(['auth', 'is_admin'])->prefix('admin')->name('admin.')->group(
     Route::get('/solicitudes', [AdminComprasController::class, 'index'])->name('solicitudes.index');
     Route::post('/solicitudes/{id}/estado', [AdminComprasController::class, 'actualizarEstado'])->name('solicitudes.estado');
     
-    // === NUEVAS RUTAS DE REPORTES ===
+    // === RUTAS DE REPORTES ===
     Route::get('/reportes', [SolicitudController::class, 'reportes'])->name('reportes');
     Route::get('/reportes/export', [SolicitudController::class, 'exportReport'])->name('reportes.export');
+    Route::get('/reportes/export-pdf', [SolicitudController::class, 'exportReportPdf'])->name('reportes.exportPdf');
 
-    // === NUEVA RUTA: PDF solo ítems revisados de UNA solicitud ===
+    // === RUTA: PDF solo ítems revisados de UNA solicitud ===
     Route::get('/solicitudes/{solicitud}/pdf-revisados', [SolicitudController::class, 'exportPdfRevisados'])
         ->name('solicitudes.pdf.revisados');
 });

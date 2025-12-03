@@ -12,7 +12,7 @@ use App\Mail\NuevaSolicitudAdminMail;
 use App\Mail\CambioEstadoSolicitudMail;
 use App\Exports\SolicitudesExport;
 use Maatwebsite\Excel\Facades\Excel;
-use Barryvdh\DomPDF\Facade\Pdf; // <- NUEVA LÍNEA
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class SolicitudController extends Controller
 {
@@ -315,7 +315,7 @@ class SolicitudController extends Controller
 
         $solicitudes = $query->paginate(20)->withQueryString();
 
-        // Estadísticas generales
+        // Estadísticas generales (sobre todas las solicitudes)
         $allSolicitudes = Solicitud::all();
         $stats = [
             'total'      => $allSolicitudes->count(),
@@ -325,14 +325,14 @@ class SolicitudController extends Controller
             'rechazada'  => $allSolicitudes->where('estado', 'rechazada')->count(),
         ];
 
-        // Estadísticas por tipo (para segunda gráfica)
+        // Estadísticas por tipo
         $statsTipos = [
             'estandar'          => $allSolicitudes->where('tipo_solicitud', 'estandar')->count(),
             'traslado_bodegas'  => $allSolicitudes->where('tipo_solicitud', 'traslado_bodegas')->count(),
             'solicitud_pedidos' => $allSolicitudes->where('tipo_solicitud', 'solicitud_pedidos')->count(),
         ];
 
-        // Estadísticas por mes (año actual) para la gráfica de línea
+        // Estadísticas por mes (año actual)
         $solicitudesPorMes = Solicitud::selectRaw('MONTH(created_at) as mes, COUNT(*) as total')
             ->whereYear('created_at', now()->year)
             ->groupBy('mes')
@@ -365,6 +365,64 @@ class SolicitudController extends Controller
         );
 
         return $export->download('reporte-solicitudes-' . now()->format('Y-m-d') . '.xlsx');
+    }
+
+    /**
+     * Exporta un resumen de reportes a PDF (solo admin).
+     */
+    public function exportReportPdf(Request $request)
+    {
+        if (!Auth::user()->esAdminCompras()) {
+            abort(403, 'No tienes permiso para exportar reportes');
+        }
+
+        $query = Solicitud::with('user')->orderBy('created_at', 'desc');
+
+        if ($request->filled('fecha_inicio')) {
+            $query->whereDate('created_at', '>=', $request->fecha_inicio);
+        }
+        if ($request->filled('fecha_fin')) {
+            $query->whereDate('created_at', '<=', $request->fecha_fin);
+        }
+        if ($request->filled('estado')) {
+            $query->where('estado', $request->estado);
+        }
+        if ($request->filled('tipo_solicitud')) {
+            $query->where('tipo_solicitud', $request->tipo_solicitud);
+        }
+
+        $solicitudes = $query->get();
+
+        $stats = [
+            'total'      => $solicitudes->count(),
+            'pendiente'  => $solicitudes->where('estado', 'pendiente')->count(),
+            'en_proceso' => $solicitudes->where('estado', 'en_proceso')->count(),
+            'finalizada' => $solicitudes->where('estado', 'finalizada')->count(),
+            'rechazada'  => $solicitudes->where('estado', 'rechazada')->count(),
+        ];
+
+        $statsTipos = [
+            'estandar'          => $solicitudes->where('tipo_solicitud', 'estandar')->count(),
+            'traslado_bodegas'  => $solicitudes->where('tipo_solicitud', 'traslado_bodegas')->count(),
+            'solicitud_pedidos' => $solicitudes->where('tipo_solicitud', 'solicitud_pedidos')->count(),
+        ];
+
+        $filtros = [
+            'fecha_inicio'   => $request->fecha_inicio,
+            'fecha_fin'      => $request->fecha_fin,
+            'estado'         => $request->estado,
+            'tipo_solicitud' => $request->tipo_solicitud,
+        ];
+
+        $pdf = Pdf::loadView('pdf.reportes_resumen', [
+            'stats'      => $stats,
+            'statsTipos' => $statsTipos,
+            'filtros'    => $filtros,
+        ])->setPaper('letter', 'portrait');
+
+        $fileName = 'reporte-resumen-' . now()->format('Ymd_His') . '.pdf';
+
+        return $pdf->download($fileName);
     }
 }
 
