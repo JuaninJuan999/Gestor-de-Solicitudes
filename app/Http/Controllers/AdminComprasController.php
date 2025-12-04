@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\SolicitudesExport;
 use Illuminate\Http\Request;
 use App\Models\Solicitud;
 use App\Models\User;
@@ -14,9 +15,6 @@ class AdminComprasController extends Controller
      */
     public function index(Request $request)
     {
-        // El middleware 'is_admin' ya protege estas rutas,
-        // no es necesario volver a comprobar aquí.
-
         // Iniciar la consulta base
         $query = Solicitud::with(['user', 'items']);
 
@@ -67,8 +65,6 @@ class AdminComprasController extends Controller
      */
     public function actualizarEstado(Request $request, $id)
     {
-        // El middleware 'is_admin' ya protege esta acción.
-
         $request->validate([
             'estado' => 'required|in:pendiente,en_proceso,finalizada,rechazada',
         ]);
@@ -78,5 +74,20 @@ class AdminComprasController extends Controller
         $solicitud->save();
 
         return redirect()->back()->with('success', 'Estado actualizado correctamente');
+    }
+
+    /**
+     * Exporta las solicitudes filtradas a Excel.
+     */
+    public function export(Request $request)
+    {
+        $export = new SolicitudesExport(
+            $request->fecha_inicio,
+            $request->fecha_fin,
+            $request->estado,
+            $request->tipo_solicitud
+        );
+
+        return $export->download('reporte-solicitudes.xlsx');
     }
 }

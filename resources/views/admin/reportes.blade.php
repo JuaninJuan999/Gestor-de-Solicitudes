@@ -81,13 +81,11 @@
                         🔍 Filtrar Resultados
                     </button>
 
-                    <!-- Exportar a Excel con filtros actuales -->
                     <a href="{{ route('admin.reportes.export', request()->query()) }}" 
                        class="flex-1 min-w-[180px] bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-xl text-center transition-all duration-300 shadow-lg hover:shadow-xl">
                         📥 Exportar a Excel
                     </a>
 
-                    <!-- Exportar a PDF con filtros actuales (debes tener la ruta admin.reportes.exportPdf) -->
                     <a href="{{ route('admin.reportes.exportPdf', request()->query()) }}" 
                        class="flex-1 min-w-[180px] bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-xl text-center transition-all duration-300 shadow-lg hover:shadow-xl">
                         📄 Exportar a PDF
@@ -121,36 +119,6 @@
                 <div class="bg-gradient-to-r from-red-500 to-red-600 text-white p-6 rounded-xl shadow-xl">
                     <h3 class="text-sm font-semibold opacity-90 mb-1">Rechazadas</h3>
                     <p class="text-3xl font-bold">{{ $stats['rechazada'] }}</p>
-                </div>
-            </div>
-
-            {{-- Gráfico por estado --}}
-            <div class="bg-white/70 backdrop-blur-md border border-white/30 rounded-xl shadow-2xl p-6 mb-10">
-                <h3 class="text-xl font-bold text-gray-800 mb-4">
-                    Distribución de solicitudes por estado
-                </h3>
-                <div class="h-72">
-                    anvas id="chartEstados"></canvas>
-                </div>
-            </div>
-
-            {{-- Gráfico por tipo --}}
-            <div class="bg-white/70 backdrop-blur-md border border-white/30 rounded-xl shadow-2xl p-6 mb-10">
-                <h3 class="text-xl font-bold text-gray-800 mb-4">
-                    Distribución de solicitudes por tipo
-                </h3>
-                <div class="h-72">
-                    anvas id="chartTipos"></canvas>
-                </div>
-            </div>
-
-            {{-- Gráfico por mes --}}
-            <div class="bg-white/70 backdrop-blur-md border border-white/30 rounded-xl shadow-2xl p-6 mb-10">
-                <h3 class="text-xl font-bold text-gray-800 mb-4">
-                    Solicitudes por mes ({{ now()->year }})
-                </h3>
-                <div class="h-72">
-                    anvas id="chartMeses"></canvas>
                 </div>
             </div>
 
@@ -204,7 +172,7 @@
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-sm">{{ $solicitud->user->name ?? 'N/A' }}</td>
-                                    <td class="px-6 py-4 text-sm">{{ $solicitud->area_solicitante ?? 'N/A' }}</td>
+                                    <td class="px-6 py-4 text-sm">{{ $solicitud->user->area ?? 'N/A' }}</td>
                                     <td class="px-6 py-4 text-sm text-gray-600">{{ $solicitud->created_at->format('d/m/Y') }}</td>
                                     <td class="px-6 py-4 text-center text-sm font-semibold">{{ $solicitud->items->count() }}</td>
                                 </tr>
@@ -232,196 +200,4 @@
         </div>
     </div>
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // Gráfico por estado
-        const canvasEstados = document.getElementById('chartEstados');
-        if (canvasEstados) {
-            const ctx = canvasEstados.getContext('2d');
-            const dataEstados = {
-                labels: ['Pendiente', 'En Proceso', 'Finalizada', 'Rechazada'],
-                datasets: [{
-                    label: 'Cantidad de solicitudes',
-                    data: [
-                        {{ $stats['pendiente'] }},
-                        {{ $stats['en_proceso'] }},
-                        {{ $stats['finalizada'] }},
-                        {{ $stats['rechazada'] }},
-                    ],
-                    backgroundColor: [
-                        'rgba(234, 179, 8, 0.6)',
-                        'rgba(59, 130, 246, 0.6)',
-                        'rgba(34, 197, 94, 0.6)',
-                        'rgba(248, 113, 113, 0.6)',
-                    ],
-                    borderColor: [
-                        'rgba(202, 138, 4, 1)',
-                        'rgba(37, 99, 235, 1)',
-                        'rgba(22, 163, 74, 1)',
-                        'rgba(220, 38, 38, 1)',
-                    ],
-                    borderWidth: 1,
-                    borderRadius: 6,
-                }]
-            };
-
-            new Chart(ctx, {
-                type: 'bar',
-                data: dataEstados,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'bottom',
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function (context) {
-                                    return context.raw + ' solicitudes';
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                precision: 0
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        // Gráfico por tipo
-        const canvasTipos = document.getElementById('chartTipos');
-        if (canvasTipos) {
-            const ctxTipos = canvasTipos.getContext('2d');
-            const dataTipos = {
-                labels: ['Solicitud Estándar', 'Traslados entre Bodegas', 'Solicitud de Pedidos'],
-                datasets: [{
-                    label: 'Cantidad de solicitudes',
-                    data: [
-                        {{ $statsTipos['estandar'] }},
-                        {{ $statsTipos['traslado_bodegas'] }},
-                        {{ $statsTipos['solicitud_pedidos'] }},
-                    ],
-                    backgroundColor: [
-                        'rgba(34, 197, 94, 0.6)',
-                        'rgba(59, 130, 246, 0.6)',
-                        'rgba(234, 179, 8, 0.6)',
-                    ],
-                    borderColor: [
-                        'rgba(22, 163, 74, 1)',
-                        'rgba(37, 99, 235, 1)',
-                        'rgba(202, 138, 4, 1)',
-                    ],
-                    borderWidth: 1,
-                    borderRadius: 6,
-                }]
-            };
-
-            new Chart(ctxTipos, {
-                type: 'bar',
-                data: dataTipos,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'bottom',
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function (context) {
-                                    return context.raw + ' solicitudes';
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                precision: 0
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        // Gráfico por mes
-        const canvasMeses = document.getElementById('chartMeses');
-        if (canvasMeses) {
-            const ctxMeses = canvasMeses.getContext('2d');
-            const dataMeses = {
-                labels: [
-                    'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
-                    'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
-                ],
-                datasets: [{
-                    label: 'Solicitudes',
-                    data: [
-                        {{ $statsMeses[1] ?? 0 }},
-                        {{ $statsMeses[2] ?? 0 }},
-                        {{ $statsMeses[3] ?? 0 }},
-                        {{ $statsMeses[4] ?? 0 }},
-                        {{ $statsMeses[5] ?? 0 }},
-                        {{ $statsMeses[6] ?? 0 }},
-                        {{ $statsMeses[7] ?? 0 }},
-                        {{ $statsMeses[8] ?? 0 }},
-                        {{ $statsMeses[9] ?? 0 }},
-                        {{ $statsMeses[10] ?? 0 }},
-                        {{ $statsMeses[11] ?? 0 }},
-                        {{ $statsMeses[12] ?? 0 }},
-                    ],
-                    fill: true,
-                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                    borderColor: 'rgba(37, 99, 235, 1)',
-                    borderWidth: 2,
-                    tension: 0.3,
-                    pointRadius: 4,
-                    pointBackgroundColor: 'rgba(37, 99, 235, 1)',
-                }]
-            };
-
-            new Chart(ctxMeses, {
-                type: 'line',
-                data: dataMeses,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'bottom',
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function (context) {
-                                    return context.raw + ' solicitudes';
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                precision: 0
-                            }
-                        }
-                    }
-                }
-            });
-        }
-    });
-</script>
 @endsection

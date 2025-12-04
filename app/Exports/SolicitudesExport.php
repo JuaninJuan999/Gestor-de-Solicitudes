@@ -4,6 +4,10 @@ namespace App\Exports;
 
 use App\Models\Solicitud;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Font;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -29,6 +33,7 @@ class SolicitudesExport
     {
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Solicitudes');
 
         // Encabezados
         $headings = [
@@ -36,19 +41,23 @@ class SolicitudesExport
             'Tipo',
             'Estado',
             'Usuario',
-            'Área Solicitante',
+            'Área',
             'Centro Costos',
             'Fecha Creación',
-            'Items Total',
+            'Items',
         ];
 
-        $col = 1;
+        // Escribir encabezados (A1, B1, C1, ...)
+        $colLetter = 'A';
         foreach ($headings as $heading) {
-            $sheet->setCellValueByColumnAndRow($col, 1, $heading);
-            $col++;
+            $sheet->setCellValue($colLetter . '1', $heading);
+            $colLetter++;
         }
 
-        // Datos
+        // Estilo de encabezados
+        $this->styleHeader($sheet, count($headings));
+
+        // Obtener datos con filtros
         $query = Solicitud::with('user');
 
         if ($this->fechaInicio) {
@@ -66,21 +75,25 @@ class SolicitudesExport
 
         $solicitudes = $query->orderBy('created_at', 'desc')->get();
 
+        // Llenar datos (A2, B2, C2, ...)
         $row = 2;
         foreach ($solicitudes as $solicitud) {
-            $sheet->setCellValueByColumnAndRow(1, $row, $solicitud->consecutivo ?? 'N/A');
-            $sheet->setCellValueByColumnAndRow(2, $row, ucwords(str_replace('_', ' ', $solicitud->tipo_solicitud)));
-            $sheet->setCellValueByColumnAndRow(3, $row, ucfirst($solicitud->estado));
-            $sheet->setCellValueByColumnAndRow(4, $row, $solicitud->user->name ?? 'N/A');
-            $sheet->setCellValueByColumnAndRow(5, $row, $solicitud->area_solicitante ?? '');
-            $sheet->setCellValueByColumnAndRow(6, $row, $solicitud->centro_costos ?? '');
-            $sheet->setCellValueByColumnAndRow(7, $row, $solicitud->created_at->format('d/m/Y H:i'));
-            $sheet->setCellValueByColumnAndRow(8, $row, $solicitud->items->count());
+            $sheet->setCellValue('A' . $row, $solicitud->consecutivo ?? 'N/A');
+            $sheet->setCellValue('B' . $row, ucwords(str_replace('_', ' ', $solicitud->tipo_solicitud)));
+            $sheet->setCellValue('C' . $row, ucfirst($solicitud->estado));
+            $sheet->setCellValue('D' . $row, $solicitud->user->name ?? 'N/A');
+            $sheet->setCellValue('E' . $row, $solicitud->user->area ?? 'N/A'); // Área del usuario
+            $sheet->setCellValue('F' . $row, $solicitud->centro_costos ?? '');
+            $sheet->setCellValue('G' . $row, $solicitud->created_at->format('d/m/Y H:i'));
+            $sheet->setCellValue('H' . $row, $solicitud->items->count());
             $row++;
         }
 
-        // Estilo básico de encabezados
-        $sheet->getStyle('A1:H1')->getFont()->setBold(true);
+        // Aplicar estilos a los datos
+        $this->styleData($sheet, $row - 1, count($headings));
+
+        // Ajustar ancho de columnas
+        $this->autoFitColumns($sheet, count($headings));
 
         $writer = new Xlsx($spreadsheet);
 
@@ -88,8 +101,103 @@ class SolicitudesExport
             $writer->save('php://output');
         }, 200, [
             'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Content-Disposition' => 'attachment;filename="'.$fileName.'"',
+            'Content-Disposition' => 'attachment;filename="' . $fileName . '"',
             'Cache-Control'       => 'max-age=0',
         ]);
+    }
+
+    /**
+     * Estiliza la fila de encabezados.
+     */
+    private function styleHeader($sheet, $colCount)
+    {
+        $headerRange = 'A1:' . chr(64 + $colCount) . '1';
+
+        // Fondo azul
+        $sheet->getStyle($headerRange)->getFill()
+            ->setFillType(Fill::FILL_SOLID)
+            ->getStartColor()->setRGB('1E40AF'); // Azul oscuro
+
+        // Letra blanca y bold
+        $sheet->getStyle($headerRange)->getFont()
+            ->setBold(true)
+            ->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FFFFFF'))
+            ->setSize(11);
+
+        // Centrado vertical y horizontal
+        $sheet->getStyle($headerRange)->getAlignment()
+            ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+            ->setVertical(Alignment::VERTICAL_CENTER)
+            ->setWrapText(true);
+
+        // Altura de fila
+        $sheet->getRowDimension(1)->setRowHeight(25);
+
+        // Bordes
+        $this->applyBorders($sheet, $headerRange);
+    }
+
+    /**
+     * Estiliza las filas de datos.
+     */
+    private function styleData($sheet, $lastRow, $colCount)
+    {
+        $dataRange = 'A2:' . chr(64 + $colCount) . $lastRow;
+
+        // Bordes para todas las celdas
+        $this->applyBorders($sheet, $dataRange);
+
+        // Alineación
+        $sheet->getStyle($dataRange)->getAlignment()
+            ->setHorizontal(Alignment::HORIZONTAL_LEFT)
+            ->setVertical(Alignment::VERTICAL_CENTER);
+
+        // Alternar colores de fila (zebra striping)
+        for ($row = 2; $row <= $lastRow; $row++) {
+            $rowRange = 'A' . $row . ':' . chr(64 + $colCount) . $row;
+
+            if ($row % 2 === 0) {
+                $sheet->getStyle($rowRange)->getFill()
+                    ->setFillType(Fill::FILL_SOLID)
+                    ->getStartColor()->setRGB('F3F4F6'); // Gris claro
+            }
+
+            // Altura de fila
+            $sheet->getRowDimension($row)->setRowHeight(20);
+        }
+
+        // Fuente
+        $sheet->getStyle($dataRange)->getFont()->setSize(10);
+    }
+
+    /**
+     * Aplica bordes a un rango de celdas.
+     */
+    private function applyBorders($sheet, $range)
+    {
+        $borderStyle = [
+            'borderStyle' => Border::BORDER_THIN,
+            'color'       => ['rgb' => 'CCCCCC'],
+        ];
+
+        $sheet->getStyle($range)->getBorders()
+            ->getLeft()->setBorderStyle($borderStyle['borderStyle'])->getColor()->setRGB($borderStyle['color']['rgb']);
+        $sheet->getStyle($range)->getBorders()
+            ->getRight()->setBorderStyle($borderStyle['borderStyle'])->getColor()->setRGB($borderStyle['color']['rgb']);
+        $sheet->getStyle($range)->getBorders()
+            ->getTop()->setBorderStyle($borderStyle['borderStyle'])->getColor()->setRGB($borderStyle['color']['rgb']);
+        $sheet->getStyle($range)->getBorders()
+            ->getBottom()->setBorderStyle($borderStyle['borderStyle'])->getColor()->setRGB($borderStyle['color']['rgb']);
+    }
+
+    /**
+     * Ajusta automáticamente el ancho de las columnas.
+     */
+    private function autoFitColumns($sheet, $colCount)
+    {
+        for ($col = 1; $col <= $colCount; $col++) {
+            $column = chr(64 + $col);
+            $sheet->getColumnDimension($column)->setAutoSize(true);
+        }
     }
 }
