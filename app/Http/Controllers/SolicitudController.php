@@ -40,28 +40,30 @@ class SolicitudController extends Controller
      * Muestra el formulario para crear una nueva solicitud.
      * Maneja diferentes tipos de solicitud y carga centros de costos.
      */
-    public function create(Request $request)
-    {
-        $tipo = $request->query('tipo');
-        $centrosCostos = CentroCosto::orderBy('departamento')->get();
+public function create(Request $request)
+{
+    $tipo = $request->query('tipo');
+    $centrosCostos = CentroCosto::orderBy('departamento')->get();
 
-        // Si no hay tipo seleccionado, mostrar la pantalla de selección
-        if (!$tipo) {
-            return view('solicitudes.select-type');
-        }
-
-        if ($tipo === 'estandar') {
-            return view('solicitudes.create', compact('centrosCostos'));
-        } elseif ($tipo === 'traslado_bodegas') {
-            $areasBodega = $centrosCostos->pluck('nombre_area')->unique();
-            return view('solicitudes.create-traslado-bodegas', compact('centrosCostos', 'areasBodega'));
-        } elseif ($tipo === 'solicitud_pedidos') {
-            $areasBodega = $centrosCostos->pluck('nombre_area')->unique();
-            return view('solicitudes.create-solicitud-pedidos', compact('centrosCostos', 'areasBodega'));
-        }
-
-        return redirect()->route('solicitudes.create');
+    // Si no hay tipo seleccionado, mostrar la pantalla de selección
+    if (!$tipo) {
+        return view('solicitudes.select-type');
     }
+
+    if ($tipo === 'estandar') {
+        return view('solicitudes.create', compact('centrosCostos'));
+    } elseif ($tipo === 'traslado_bodegas') {
+        $areasBodega = $centrosCostos->pluck('nombre_area')->unique();
+        return view('solicitudes.create-traslado-bodegas', compact('centrosCostos', 'areasBodega'));
+    } elseif ($tipo === 'solicitud_pedidos') {
+        $areasBodega = $centrosCostos->pluck('nombre_area')->unique();
+        return view('solicitudes.create-solicitud-pedidos', compact('centrosCostos', 'areasBodega'));
+    } elseif ($tipo === 'solicitud_mtto') {   // ← NUEVO TIPO
+        return view('solicitudes.create-solicitud-mtto', compact('centrosCostos'));
+    }
+
+    return redirect()->route('solicitudes.create');
+}
 
     /**
      * Guarda una nueva solicitud en la base de datos.
@@ -69,77 +71,90 @@ class SolicitudController extends Controller
      * Envía correo a los admins notificando la nueva solicitud.
      */
     public function store(Request $request)
-    {
-        $request->validate([
-            'titulo' => 'required|string|max:255',
-            'tipo_solicitud' => 'required|string|in:estandar,traslado_bodegas,solicitud_pedidos',
-            'area_solicitante' => 'nullable|string|max:255',
-            'centro_costos' => 'nullable|string|max:255',
-            'descripcion' => 'required|string',
-            'archivo' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:2048',
-            'items' => 'required|array|min:1',
-        ]);
+{
+    $request->validate([
+        'titulo'          => 'required|string|max:255',
+        'tipo_solicitud'  => 'required|string|in:estandar,traslado_bodegas,solicitud_pedidos,solicitud_mtto',
+        'area_solicitante'=> 'nullable|string|max:255',
+        'centro_costos'   => 'nullable|string|max:255',
+        'descripcion'     => 'required|string',
+        'archivo'         => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:2048',
+        'items'           => 'required|array|min:1',
 
-        $archivoPath = null;
-        if ($request->hasFile('archivo')) {
-            $archivoPath = $request->file('archivo')->store('solicitudes', 'public');
-        }
+        // Solo obligatorio para el nuevo tipo
+        'funcion_formato' => 'required_if:tipo_solicitud,solicitud_mtto|in:insumos_activos,servicios_presupuestados',
+        'justificacion'   => 'required_if:tipo_solicitud,solicitud_mtto|string|max:1000',
+    ]);
 
-        $ultimaSolicitud = Solicitud::orderBy('id', 'desc')->first();
-        $numeroConsecutivo = $ultimaSolicitud ? ($ultimaSolicitud->id + 1) : 1;
-        $consecutivo = 'TICKET-' . str_pad($numeroConsecutivo, 4, '0', STR_PAD_LEFT);
-
-        $solicitud = Solicitud::create([
-            'user_id' => auth()->id(),
-            'consecutivo' => $consecutivo,
-            'titulo' => $request->titulo,
-            'tipo_solicitud' => $request->tipo_solicitud,
-            'area_solicitante' => $request->area_solicitante,
-            'centro_costos' => $request->centro_costos,
-            'descripcion' => $request->descripcion,
-            'archivo' => $archivoPath,
-            'estado' => 'pendiente',
-        ]);
-
-        foreach ($request->items as $item) {
-            if ($request->tipo_solicitud === 'estandar') {
-                $solicitud->items()->create([
-                    'referencia' => $item['referencia'] ?? null,
-                    'unidad' => $item['unidad'] ?? null,
-                    'descripcion' => $item['descripcion'] ?? null,
-                    'cantidad' => $item['cantidad'] ?? null,
-                ]);
-            } elseif ($request->tipo_solicitud === 'traslado_bodegas') {
-                $solicitud->items()->create([
-                    'codigo' => $item['codigo'] ?? null,
-                    'descripcion' => $item['descripcion'] ?? null,
-                    'cantidad' => $item['cantidad'] ?? null,
-                    'bodega' => $item['bodega'] ?? null,
-                ]);
-            } elseif ($request->tipo_solicitud === 'solicitud_pedidos') {
-                $solicitud->items()->create([
-                    'codigo' => $item['codigo'] ?? null,
-                    'descripcion' => $item['descripcion'] ?? null,
-                    'cantidad' => $item['cantidad'] ?? null,
-                    'area_consumo' => $item['area_consumo'] ?? null,
-                    'centro_costos_item' => $item['centro_costos_item'] ?? null,
-                ]);
-            }
-        }
-
-        // === ENVÍO DE CORREO A ADMINS POR NUEVA SOLICITUD ===
-        $admins = User::where('is_admin', true)->get();
-        foreach ($admins as $admin) {
-            if ($admin->email) {
-                Mail::to($admin->email)->send(new NuevaSolicitudAdminMail($solicitud));
-            }
-        }
-        // ====================================================
-
-        return redirect()
-            ->route('solicitudes.index')
-            ->with('success', 'Solicitud registrada correctamente con consecutivo: ' . $consecutivo);
+    $archivoPath = null;
+    if ($request->hasFile('archivo')) {
+        $archivoPath = $request->file('archivo')->store('solicitudes', 'public');
     }
+
+    $ultimaSolicitud   = Solicitud::orderBy('id', 'desc')->first();
+    $numeroConsecutivo = $ultimaSolicitud ? ($ultimaSolicitud->id + 1) : 1;
+    $consecutivo       = 'TICKET-' . str_pad($numeroConsecutivo, 4, '0', STR_PAD_LEFT);
+
+    $solicitud = Solicitud::create([
+        'user_id'         => auth()->id(),
+        'consecutivo'     => $consecutivo,
+        'titulo'          => $request->titulo,
+        'tipo_solicitud'  => $request->tipo_solicitud,
+        'area_solicitante'=> $request->area_solicitante,
+        'centro_costos'   => $request->centro_costos,
+        'descripcion'     => $request->descripcion,
+        'archivo'         => $archivoPath,
+        'estado'          => 'pendiente',
+
+        // Nuevos campos (asegúrate de tener estas columnas en la tabla solicitudes)
+        'funcion_formato' => $request->tipo_solicitud === 'solicitud_mtto' ? $request->funcion_formato : null,
+        'justificacion'   => $request->tipo_solicitud === 'solicitud_mtto' ? $request->justificacion : null,
+    ]);
+
+    foreach ($request->items as $item) {
+        if ($request->tipo_solicitud === 'estandar') {
+            $solicitud->items()->create([
+                'referencia' => $item['referencia'] ?? null,
+                'unidad'     => $item['unidad'] ?? null,
+                'descripcion'=> $item['descripcion'] ?? null,
+                'cantidad'   => $item['cantidad'] ?? null,
+            ]);
+        } elseif ($request->tipo_solicitud === 'traslado_bodegas') {
+            $solicitud->items()->create([
+                'codigo'     => $item['codigo'] ?? null,
+                'descripcion'=> $item['descripcion'] ?? null,
+                'cantidad'   => $item['cantidad'] ?? null,
+                'bodega'     => $item['bodega'] ?? null,
+            ]);
+        } elseif ($request->tipo_solicitud === 'solicitud_pedidos') {
+            $solicitud->items()->create([
+                'codigo'            => $item['codigo'] ?? null,
+                'descripcion'       => $item['descripcion'] ?? null,
+                'cantidad'          => $item['cantidad'] ?? null,
+                'area_consumo'      => $item['area_consumo'] ?? null,
+                'centro_costos_item'=> $item['centro_costos_item'] ?? null,
+            ]);
+        } elseif ($request->tipo_solicitud === 'solicitud_mtto') {
+            $solicitud->items()->create([
+                'descripcion'     => $item['descripcion'] ?? null,
+                'especificaciones'=> $item['especificaciones'] ?? null,
+                'cantidad'        => $item['cantidad'] ?? null,
+            ]);
+        }
+    }
+
+    // Correo a admins
+    $admins = User::where('is_admin', true)->get();
+    foreach ($admins as $admin) {
+        if ($admin->email) {
+            Mail::to($admin->email)->send(new NuevaSolicitudAdminMail($solicitud));
+        }
+    }
+
+    return redirect()
+        ->route('solicitudes.index')
+        ->with('success', 'Solicitud registrada correctamente con consecutivo: ' . $consecutivo);
+}
 
     /**
      * Muestra los detalles de una solicitud específica con comentarios.

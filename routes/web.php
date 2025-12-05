@@ -16,15 +16,17 @@ Route::get('/dashboard', function () {
 
 // Rutas para usuarios autenticados
 Route::middleware(['auth'])->group(function () {
-    
+
     // Rutas de perfil
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    
+
     // Rutas de solicitudes para usuarios normales
     Route::get('/solicitudes', [SolicitudController::class, 'index'])->name('solicitudes.index');
     Route::get('/solicitudes/create', [SolicitudController::class, 'create'])->name('solicitudes.create');
+    // (ya NO hay ruta createMtto, todo pasa por create?tipo=...)
+
     Route::post('/solicitudes', [SolicitudController::class, 'store'])->name('solicitudes.store');
     Route::get('/solicitudes/{solicitud}', [SolicitudController::class, 'show'])->name('solicitudes.show');
     Route::get('/solicitudes/{id}/edit', [SolicitudController::class, 'edit'])->name('solicitudes.edit');
@@ -34,10 +36,10 @@ Route::middleware(['auth'])->group(function () {
     // Ruta para actualizar checklist de ítems revisados
     Route::post('/solicitudes/{solicitud}/items/checklist', [SolicitudController::class, 'updateChecklist'])
         ->name('solicitudes.updateChecklist');
-    
+
     // Rutas de comentarios
     Route::post('/solicitudes/{solicitud}/comentarios', [ComentarioController::class, 'store'])->name('comentarios.store');
-    
+
     // Actualizar estado (solo admin, pero protegido también por middleware is_admin si lo usas aquí)
     Route::patch('/solicitudes/{solicitud}/status', [SolicitudController::class, 'updateStatus'])->name('solicitudes.updateStatus');
 });
@@ -46,27 +48,27 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth', 'is_admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/solicitudes', [AdminComprasController::class, 'index'])->name('solicitudes.index');
     Route::post('/solicitudes/{id}/estado', [AdminComprasController::class, 'actualizarEstado'])->name('solicitudes.estado');
-    
-   // === RUTAS DE REPORTES ===
-Route::get('/reportes', [SolicitudController::class, 'reportes'])->name('reportes');
 
-// Excel usando AdminComprasController + SolicitudesExport
-Route::get('/reportes/export', [AdminComprasController::class, 'export'])
-    ->name('reportes.export');
+    // === RUTAS DE REPORTES ===
+    Route::get('/reportes', [SolicitudController::class, 'reportes'])->name('reportes');
 
-// PDF (sigue igual, si ya te funciona)
-Route::get('/reportes/export-pdf', [SolicitudController::class, 'exportReportPdf'])
-    ->name('reportes.exportPdf');
+    // Excel usando AdminComprasController + SolicitudesExport
+    Route::get('/reportes/export', [AdminComprasController::class, 'export'])
+        ->name('reportes.export');
 
+    // PDF (sigue igual, si ya te funciona)
+    Route::get('/reportes/export-pdf', [SolicitudController::class, 'exportReportPdf'])
+        ->name('reportes.exportPdf');
 
     // === RUTA: PDF solo ítems revisados de UNA solicitud ===
     Route::get('/solicitudes/{solicitud}/pdf-revisados', [SolicitudController::class, 'exportPdfRevisados'])
         ->name('solicitudes.pdf.revisados');
 });
- //ruta temporal//
+
+// ruta temporal
 Route::get('/php-info', function () {
     phpinfo();
 });
 
 // Incluir las rutas de autenticación (login, register, password, etc.)
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

@@ -15,6 +15,7 @@ class Item extends Model
         'codigo',      // ← LÍNEA AGREGADA
         'unidad',
         'descripcion',
+        'especificaciones', 
         'cantidad',
         'bodega',       // ← LÍNEA AGREGADA
         'area_consumo',        // ← agregar

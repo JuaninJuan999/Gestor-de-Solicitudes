@@ -60,6 +60,9 @@
                         } elseif ($solicitud->tipo_solicitud == 'solicitud_pedidos') {
                             $etiquetaTipo = 'Solicitud de Pedidos';
                             $colorTipo = 'bg-yellow-600';
+                        } elseif ($solicitud->tipo_solicitud == 'solicitud_mtto') {
+                            $etiquetaTipo = 'Solicitud Insumos / Servicio';
+                            $colorTipo = 'bg-purple-700';
                         }
                     @endphp
 
@@ -118,6 +121,23 @@
                             {{ $solicitud->titulo ?? 'Sin título' }}
                         </span>
                     </div>
+
+                    <!-- Campos específicos para Solicitud Insumos / Servicio -->
+                    @if($solicitud->tipo_solicitud == 'solicitud_mtto')
+                        <div class="bg-white/70 p-4 rounded-xl shadow md:col-span-3">
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Función del Formato:</label>
+                            <span class="px-3 py-1 bg-pink-100 text-pink-800 rounded-lg text-sm font-semibold inline-block">
+                                {{ $solicitud->funcion_formato == 'insumos_activos' ? 'Solicitud de Insumos / Activos' : 'Servicios Presupuestados' }}
+                            </span>
+                        </div>
+
+                        <div class="bg-white/70 p-4 rounded-xl shadow md:col-span-3">
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Justificación:</label>
+                            <p class="text-gray-700 bg-white p-3 rounded-lg border border-gray-200">
+                                {{ $solicitud->justificacion ?? 'Sin justificación' }}
+                            </p>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -279,6 +299,47 @@
                                                 <td class="border px-4 py-2">{{ $item['cantidad'] ?? '-' }}</td>
                                                 <td class="border px-4 py-2">{{ $item['area_consumo'] ?? '-' }}</td>
                                                 <td class="border px-4 py-2">{{ $item['centro_costos_item'] ?? '-' }}</td>
+                                            </tr>
+                                        @endforeach
+                                    @endif
+                                </tbody>
+                            </table>
+                        @elseif($solicitud->tipo_solicitud == 'solicitud_mtto')
+                            <table class="min-w-full border-collapse border border-gray-300">
+                                <thead class="bg-purple-600 text-white">
+                                    <tr>
+                                        @if(Auth::user()->esAdminCompras())
+                                            <th class="border border-gray-300 px-4 py-2 text-center">✔</th>
+                                        @endif
+                                        <th class="border border-gray-300 px-4 py-2 text-left">DESCRIPCIÓN</th>
+                                        <th class="border border-gray-300 px-4 py-2 text-left">ESPECIFICACIONES</th>
+                                        <th class="border border-gray-300 px-4 py-2 text-center">CANTIDAD</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white">
+                                    @if($itemsTabla->isNotEmpty())
+                                        @foreach($itemsTabla as $item)
+                                            <tr class="hover:bg-gray-50 {{ $item->revisado ? 'bg-green-50' : '' }}">
+                                                @if(Auth::user()->esAdminCompras())
+                                                    <td class="border border-gray-300 px-4 py-2 text-center">
+                                                        <input type="checkbox"
+                                                               name="items_revisados[]"
+                                                               value="{{ $item->id }}"
+                                                               class="w-4 h-4"
+                                                               {{ $item->revisado ? 'checked' : '' }}>
+                                                    </td>
+                                                @endif
+                                                <td class="border border-gray-300 px-4 py-2">{{ $item->descripcion ?? '-' }}</td>
+                                                <td class="border border-gray-300 px-4 py-2">{{ $item->especificaciones ?? '-' }}</td>
+                                                <td class="border border-gray-300 px-4 py-2 text-center">{{ $item->cantidad ?? '-' }}</td>
+                                            </tr>
+                                        @endforeach
+                                    @else
+                                        @foreach($itemsJson as $item)
+                                            <tr class="hover:bg-gray-50">
+                                                <td class="border border-gray-300 px-4 py-2">{{ $item['descripcion'] ?? '-' }}</td>
+                                                <td class="border border-gray-300 px-4 py-2">{{ $item['especificaciones'] ?? '-' }}</td>
+                                                <td class="border border-gray-300 px-4 py-2 text-center">{{ $item['cantidad'] ?? '-' }}</td>
                                             </tr>
                                         @endforeach
                                     @endif

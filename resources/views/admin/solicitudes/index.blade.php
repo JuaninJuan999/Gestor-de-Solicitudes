@@ -5,7 +5,6 @@
 --}}
 @extends('layouts.app')
 
-
 @section('content')
 <div class="py-12">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -62,6 +61,7 @@
                                     <option value="estandar" {{ request('tipo_solicitud') == 'estandar' ? 'selected' : '' }}>Solicitud Estándar</option>
                                     <option value="traslado_bodegas" {{ request('tipo_solicitud') == 'traslado_bodegas' ? 'selected' : '' }}>Traslados entre Bodegas</option>
                                     <option value="solicitud_pedidos" {{ request('tipo_solicitud') == 'solicitud_pedidos' ? 'selected' : '' }}>Solicitud de Pedidos</option>
+                                    <option value="solicitud_mtto" {{ request('tipo_solicitud') == 'solicitud_mtto' ? 'selected' : '' }}>Solicitud Insumos / Servicio</option>
                                 </select>
                             </div>
                             <div>
@@ -122,6 +122,7 @@
                                     'estandar' => 'Solicitud Estándar',
                                     'traslado_bodegas' => 'Traslados entre Bodegas',
                                     'solicitud_pedidos' => 'Solicitud de Pedidos',
+                                    'solicitud_mtto' => 'Solicitud Insumos / Servicio',
                                     default => request('tipo_solicitud'),
                                 };
                             @endphp
@@ -178,6 +179,9 @@
                                                 } elseif ($solicitud->tipo_solicitud == 'solicitud_pedidos') {
                                                     $etiquetaTipo = 'Solicitud de Pedidos';
                                                     $colorTipo = 'bg-yellow-500 text-black';
+                                                } elseif ($solicitud->tipo_solicitud == 'solicitud_mtto') {
+                                                    $etiquetaTipo = 'Solicitud Insumos / Servicio';
+                                                    $colorTipo = 'bg-purple-700 text-white';
                                                 }
                                             @endphp
                                             <span class="px-3 py-1 rounded-lg text-sm font-semibold {{ $colorTipo }}">
@@ -315,6 +319,35 @@
                                                                     <td class="border px-4 py-2">{{ $item['cantidad'] ?? '-' }}</td>
                                                                     <td class="border px-4 py-2">{{ $item['area_consumo'] ?? '-' }}</td>
                                                                     <td class="border px-4 py-2">{{ $item['centro_costos_item'] ?? '-' }}</td>
+                                                                </tr>
+                                                            @endforeach
+                                                        @endif
+                                                    </tbody>
+                                                </table>
+                                            @elseif($solicitud->tipo_solicitud == 'solicitud_mtto')
+                                                <table class="min-w-full border-collapse border border-gray-300">
+                                                    <thead class="bg-purple-600 text-white">
+                                                        <tr>
+                                                            <th class="border border-gray-300 px-4 py-2 text-left">DESCRIPCIÓN</th>
+                                                            <th class="border border-gray-300 px-4 py-2 text-left">ESPECIFICACIONES</th>
+                                                            <th class="border border-gray-300 px-4 py-2 text-center">CANTIDAD</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="bg-white">
+                                                        @if($itemsTabla->isNotEmpty())
+                                                            @foreach($itemsTabla as $item)
+                                                                <tr class="hover:bg-gray-50">
+                                                                    <td class="border border-gray-300 px-4 py-2">{{ $item->descripcion ?? '-' }}</td>
+                                                                    <td class="border border-gray-300 px-4 py-2">{{ $item->especificaciones ?? '-' }}</td>
+                                                                    <td class="border border-gray-300 px-4 py-2 text-center">{{ $item->cantidad ?? '-' }}</td>
+                                                                </tr>
+                                                            @endforeach
+                                                        @else
+                                                            @foreach($itemsJson as $item)
+                                                                <tr class="hover:bg-gray-50">
+                                                                    <td class="border border-gray-300 px-4 py-2">{{ $item['descripcion'] ?? '-' }}</td>
+                                                                    <td class="border border-gray-300 px-4 py-2">{{ $item['especificaciones'] ?? '-' }}</td>
+                                                                    <td class="border border-gray-300 px-4 py-2 text-center">{{ $item['cantidad'] ?? '-' }}</td>
                                                                 </tr>
                                                             @endforeach
                                                         @endif
