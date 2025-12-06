@@ -1,6 +1,5 @@
 @extends('layouts.app')
 
-
 @section('content')
 <!-- Contenedor con fondo de imagen -->
 <div style="background-image: url('/images/create-solicitud.jpg'); 
@@ -23,7 +22,6 @@
             </a>
         </div>
 
-
         <!-- Tarjeta principal (70% transparente) -->
         <div class="bg-white bg-opacity-70 overflow-hidden shadow-2xl sm:rounded-lg"
              style="backdrop-filter: blur(10px);">
@@ -31,14 +29,11 @@
                 
                 <h2 class="text-2xl font-bold text-blue-600 mb-6">Registrar Traslados entre Bodegas</h2>
 
-
                 <form action="{{ route('solicitudes.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
 
-
                     <!-- Campo oculto para el tipo de solicitud -->
                     <input type="hidden" name="tipo_solicitud" value="traslado_bodegas">
-
 
                     <!-- Título -->
                     <div class="mb-6">
@@ -49,8 +44,7 @@
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                     </div>
 
-
-                    <!-- Centro de Costos - Select agrupado -->
+                    <!-- Centro de Costos - Select agrupado (PRINCIPAL) -->
                     <div class="mb-6">
                         <label for="centro_costos" class="block text-sm font-medium text-gray-700 mb-2">
                             Centro de Costos:
@@ -69,7 +63,6 @@
                         </select>
                     </div>
 
-
                     <!-- Tabla de items -->
                     <div class="mb-6">
                         <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -82,7 +75,7 @@
                                         <th class="border border-gray-300 px-4 py-2">CÓDIGO</th>
                                         <th class="border border-gray-300 px-4 py-2">DESCRIPCIÓN</th>
                                         <th class="border border-gray-300 px-4 py-2">CANTIDAD</th>
-                                        <th class="border border-gray-300 px-4 py-2"># BODEGA</th>
+                                        <th class="border border-gray-300 px-4 py-2"># BODEGA (DESTINO)</th>
                                         <th class="border border-gray-300 px-4 py-2">ACCIÓN</th>
                                     </tr>
                                 </thead>
@@ -98,11 +91,19 @@
                                             <input type="number" name="items[0][cantidad]" class="w-full px-2 py-1 border rounded">
                                         </td>
                                         <td class="border border-gray-300 px-4 py-2">
-                                            <!-- Select de bodega (solo áreas) -->
+                                            <!-- Select de bodega (REPLICADO CON GRUPOS) -->
                                             <select name="items[0][bodega]" required class="w-full px-2 py-1 border rounded">
-                                                <option value="">Seleccione área/bodega...</option>
-                                                @foreach($areasBodega as $area)
-                                                    <option value="{{ $area }}">{{ $area }}</option>
+                                                <option value="">Seleccione bodega destino...</option>
+                                                @foreach($centrosCostos->groupBy('departamento') as $depto => $areas)
+                                                    <optgroup label="{{ $depto }}">
+                                                        @foreach($areas as $area)
+                                                            {{-- NOTA: Value guarda nombre_area para compatibilidad, 
+                                                                 pero visualmente muestra CC-SC | NOMBRE (CUENTA) --}}
+                                                            <option value="{{ $area->nombre_area }}">
+                                                                {{ $area->cc }}-{{ $area->sc }} | {{ $area->nombre_area }} ({{ $area->cuenta_contable }})
+                                                            </option>
+                                                        @endforeach
+                                                    </optgroup>
                                                 @endforeach
                                             </select>
                                         </td>
@@ -116,12 +117,10 @@
                             </table>
                         </div>
 
-
                         <button type="button" onclick="agregarFila()" class="mt-3 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
                             + Agregar fila
                         </button>
                     </div>
-
 
                     <!-- Observaciones -->
                     <div class="mb-6">
@@ -132,7 +131,6 @@
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg"></textarea>
                     </div>
 
-
                     <!-- Archivo -->
                     <div class="mb-6">
                         <label for="archivo" class="block text-sm font-medium text-gray-700 mb-2">
@@ -140,7 +138,6 @@
                         </label>
                         <input type="file" name="archivo" id="archivo" class="w-full px-4 py-2 border rounded-lg">
                     </div>
-
 
                     <!-- Botones -->
                     <div class="flex gap-4">
@@ -157,19 +154,44 @@
     </div>
 </div>
 
-
 <script>
     let filaIndex = 1;
-    // Convierte PHP/Blade a JS
-    const areasBodega = @json($areasBodega);
-
+    
+    // Convertimos TODA la colección de centros de costos a JSON
+    // para poder replicar el agrupamiento en JS
+    const centrosCostos = @json($centrosCostos);
 
     function agregarFila() {
         const tbody = document.getElementById('itemsTable');
-        let options = '<option value="">Seleccione área/bodega...</option>';
-        areasBodega.forEach(area => {
-            options += `<option value="${area}">${area}</option>`;
+        
+        // --- CONSTRUCCIÓN DEL SELECT EN JS ---
+        let options = '<option value="">Seleccione bodega destino...</option>';
+        
+        // 1. Agrupar por departamento (recreamos groupBy de Laravel en JS)
+        const grupos = {};
+        centrosCostos.forEach(area => {
+            const depto = area.departamento || 'SIN DEPARTAMENTO';
+            if (!grupos[depto]) {
+                grupos[depto] = [];
+            }
+            grupos[depto].push(area);
         });
+
+        // 2. Generar HTML con <optgroup>
+        for (const [depto, areas] of Object.entries(grupos)) {
+            options += `<optgroup label="${depto}">`;
+            
+            areas.forEach(area => {
+                // Formato idéntico al Blade: CC-SC | NOMBRE (CUENTA)
+                const texto = `${area.cc}-${area.sc} | ${area.nombre_area} (${area.cuenta_contable})`;
+                // Value guarda solo el nombre (según tu lógica actual de BD)
+                options += `<option value="${area.nombre_area}">${texto}</option>`;
+            });
+            
+            options += `</optgroup>`;
+        }
+        // -------------------------------------
+
         const fila = `
             <tr>
                 <td class="border border-gray-300 px-4 py-2">
@@ -196,7 +218,6 @@
         tbody.insertAdjacentHTML('beforeend', fila);
         filaIndex++;
     }
-
 
     function eliminarFila(boton) {
         const fila = boton.closest('tr');

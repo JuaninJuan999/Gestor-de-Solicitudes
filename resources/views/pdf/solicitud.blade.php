@@ -84,8 +84,16 @@
                 Traslados entre Bodegas
             @elseif($solicitud->tipo_solicitud == 'solicitud_pedidos')
                 Solicitud de Pedidos
+            @elseif($solicitud->tipo_solicitud == 'solicitud_mtto')
+                Solicitud Insumos / Servicio
             @endif
         </p>
+
+        {{-- Nueva línea para mostrar la justificación en este tipo específico --}}
+        @if($solicitud->tipo_solicitud == 'solicitud_mtto')
+            <p><strong>Justificación:</strong> {{ $solicitud->justificacion ?? 'Sin justificación' }}</p>
+        @endif
+
         <p><strong>Fecha:</strong> {{ $solicitud->created_at->format('d/m/Y H:i') }}</p>
     </div>
 
@@ -155,6 +163,26 @@
                             <td>{{ $item->cantidad ?? '-' }}</td>
                             <td>{{ $item->area_consumo ?? '-' }}</td>
                             <td>{{ $item->centro_costos_item ?? '-' }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @elseif($solicitud->tipo_solicitud == 'solicitud_mtto')
+            {{-- Nueva tabla para Insumos / Servicio --}}
+            <table>
+                <thead>
+                    <tr>
+                        <th>DESCRIPCIÓN</th>
+                        <th>ESPECIFICACIONES</th>
+                        <th>CANTIDAD</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($itemsRevisados as $item)
+                        <tr>
+                            <td>{{ $item->descripcion ?? '-' }}</td>
+                            <td>{{ $item->especificaciones ?? '-' }}</td>
+                            <td>{{ $item->cantidad ?? '-' }}</td>
                         </tr>
                     @endforeach
                 </tbody>

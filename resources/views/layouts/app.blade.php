@@ -29,17 +29,25 @@
                     </div>
                 </div>
 
-                <!-- Derecha: DASHBOARD + Cerrar sesión en línea -->
+                <!-- Derecha: DASHBOARD + MI PERFIL + Cerrar sesión en línea -->
                 <div class="flex items-center space-x-4">
                     @auth
+                        <!-- Botón Dashboard -->
                         <a href="{{ route('dashboard') }}" 
-                           class="px-6 py-2 bg-gray-100 bg-opacity-70 backdrop-blur-md border-2 border-gray-300 border-opacity-50 rounded-lg hover:bg-opacity-90 hover:border-opacity-70 transition-all duration-300 shadow-lg">
+                           class="px-6 py-2 bg-gray-100 bg-opacity-70 backdrop-blur-md border-2 border-gray-300 border-opacity-50 rounded-lg hover:bg-opacity-90 hover:border-opacity-70 transition-all duration-300 shadow-lg flex items-center gap-2">
                             <span class="text-xl font-bold text-gray-700">📊 DASHBOARD</span>
+                        </a>
+
+                        <!-- Botón MI PERFIL (NUEVO) -->
+                        <a href="{{ route('perfil.edit') }}" 
+                           class="px-6 py-2 bg-blue-100 bg-opacity-70 backdrop-blur-md border-2 border-blue-300 border-opacity-50 rounded-lg hover:bg-opacity-90 hover:border-opacity-70 transition-all duration-300 shadow-lg flex items-center gap-2">
+                            <span class="text-xl font-bold text-blue-800">👤 MI PERFIL</span>
                         </a>
                     @endauth
 
                     @if (Route::has('login'))
                         @auth
+                            <!-- Botón Cerrar Sesión -->
                             <form action="{{ route('logout') }}" method="POST">
                                 @csrf
                                 <button type="submit" 
@@ -90,7 +98,6 @@
                 "{{ asset('images/logos/logo2.png') }}",
                 "{{ asset('images/logos/logo3.png') }}",
                 "{{ asset('images/logos/logo4.png') }}",
-                
             ];
 
             const img = document.getElementById('logoSlide');

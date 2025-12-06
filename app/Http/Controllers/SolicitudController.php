@@ -40,30 +40,35 @@ class SolicitudController extends Controller
      * Muestra el formulario para crear una nueva solicitud.
      * Maneja diferentes tipos de solicitud y carga centros de costos.
      */
-public function create(Request $request)
-{
-    $tipo = $request->query('tipo');
-    $centrosCostos = CentroCosto::orderBy('departamento')->get();
+    public function create(Request $request)
+    {
+        $tipo = $request->query('tipo');
+        $centrosCostos = CentroCosto::orderBy('departamento')->get();
 
-    // Si no hay tipo seleccionado, mostrar la pantalla de selección
-    if (!$tipo) {
-        return view('solicitudes.select-type');
+        // Si no hay tipo seleccionado, mostrar la pantalla de selección
+        if (!$tipo) {
+            return view('solicitudes.select-type');
+        }
+
+        if ($tipo === 'estandar') {
+            return view('solicitudes.create', compact('centrosCostos'));
+
+        } elseif ($tipo === 'traslado_bodegas') {
+            // CORRECCIÓN: Enviamos objetos completos para poder usar 'cc' en la vista
+            $areasBodega = $centrosCostos->unique('nombre_area')->sortBy('nombre_area');
+            return view('solicitudes.create-traslado-bodegas', compact('centrosCostos', 'areasBodega'));
+
+        } elseif ($tipo === 'solicitud_pedidos') {
+            // CORRECCIÓN: Igual aquí para consistencia
+            $areasBodega = $centrosCostos->unique('nombre_area')->sortBy('nombre_area');
+            return view('solicitudes.create-solicitud-pedidos', compact('centrosCostos', 'areasBodega'));
+
+        } elseif ($tipo === 'solicitud_mtto') {   // ← NUEVO TIPO
+            return view('solicitudes.create-solicitud-mtto', compact('centrosCostos'));
+        }
+
+        return redirect()->route('solicitudes.create');
     }
-
-    if ($tipo === 'estandar') {
-        return view('solicitudes.create', compact('centrosCostos'));
-    } elseif ($tipo === 'traslado_bodegas') {
-        $areasBodega = $centrosCostos->pluck('nombre_area')->unique();
-        return view('solicitudes.create-traslado-bodegas', compact('centrosCostos', 'areasBodega'));
-    } elseif ($tipo === 'solicitud_pedidos') {
-        $areasBodega = $centrosCostos->pluck('nombre_area')->unique();
-        return view('solicitudes.create-solicitud-pedidos', compact('centrosCostos', 'areasBodega'));
-    } elseif ($tipo === 'solicitud_mtto') {   // ← NUEVO TIPO
-        return view('solicitudes.create-solicitud-mtto', compact('centrosCostos'));
-    }
-
-    return redirect()->route('solicitudes.create');
-}
 
     /**
      * Guarda una nueva solicitud en la base de datos.
@@ -71,97 +76,96 @@ public function create(Request $request)
      * Envía correo a los admins notificando la nueva solicitud.
      */
     public function store(Request $request)
-{
-    $request->validate([
-        'titulo'          => 'required|string|max:255',
-        'tipo_solicitud'  => 'required|string|in:estandar,traslado_bodegas,solicitud_pedidos,solicitud_mtto',
-        'area_solicitante'=> 'nullable|string|max:255',
-        'centro_costos'   => 'nullable|string|max:255',
-        'descripcion'     => 'required|string',
-        'archivo'         => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:2048',
-        'items'           => 'required|array|min:1',
+    {
+        $request->validate([
+            'titulo'          => 'required|string|max:255',
+            'tipo_solicitud'  => 'required|string|in:estandar,traslado_bodegas,solicitud_pedidos,solicitud_mtto',
+            'area_solicitante'=> 'nullable|string|max:255',
+            'centro_costos'   => 'nullable|string|max:255',
+            'descripcion'     => 'required|string',
+            'archivo'         => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:2048',
+            'items'           => 'required|array|min:1',
 
-        // Solo obligatorio para el nuevo tipo
-        'funcion_formato' => 'required_if:tipo_solicitud,solicitud_mtto|in:insumos_activos,servicios_presupuestados',
-        'justificacion'   => 'required_if:tipo_solicitud,solicitud_mtto|string|max:1000',
-    ]);
+            // Solo obligatorio para el nuevo tipo
+            'funcion_formato' => 'required_if:tipo_solicitud,solicitud_mtto|in:insumos_activos,servicios_presupuestados',
+            'justificacion'   => 'required_if:tipo_solicitud,solicitud_mtto|string|max:1000',
+        ]);
 
-    $archivoPath = null;
-    if ($request->hasFile('archivo')) {
-        $archivoPath = $request->file('archivo')->store('solicitudes', 'public');
-    }
-
-    $ultimaSolicitud   = Solicitud::orderBy('id', 'desc')->first();
-    $numeroConsecutivo = $ultimaSolicitud ? ($ultimaSolicitud->id + 1) : 1;
-    $consecutivo       = 'TICKET-' . str_pad($numeroConsecutivo, 4, '0', STR_PAD_LEFT);
-
-    $solicitud = Solicitud::create([
-        'user_id'         => auth()->id(),
-        'consecutivo'     => $consecutivo,
-        'titulo'          => $request->titulo,
-        'tipo_solicitud'  => $request->tipo_solicitud,
-        'area_solicitante'=> $request->area_solicitante,
-        'centro_costos'   => $request->centro_costos,
-        'descripcion'     => $request->descripcion,
-        'archivo'         => $archivoPath,
-        'estado'          => 'pendiente',
-
-        // Nuevos campos (asegúrate de tener estas columnas en la tabla solicitudes)
-        'funcion_formato' => $request->tipo_solicitud === 'solicitud_mtto' ? $request->funcion_formato : null,
-        'justificacion'   => $request->tipo_solicitud === 'solicitud_mtto' ? $request->justificacion : null,
-    ]);
-
-    foreach ($request->items as $item) {
-        if ($request->tipo_solicitud === 'estandar') {
-            $solicitud->items()->create([
-                'referencia' => $item['referencia'] ?? null,
-                'unidad'     => $item['unidad'] ?? null,
-                'descripcion'=> $item['descripcion'] ?? null,
-                'cantidad'   => $item['cantidad'] ?? null,
-            ]);
-        } elseif ($request->tipo_solicitud === 'traslado_bodegas') {
-            $solicitud->items()->create([
-                'codigo'     => $item['codigo'] ?? null,
-                'descripcion'=> $item['descripcion'] ?? null,
-                'cantidad'   => $item['cantidad'] ?? null,
-                'bodega'     => $item['bodega'] ?? null,
-            ]);
-        } elseif ($request->tipo_solicitud === 'solicitud_pedidos') {
-            $solicitud->items()->create([
-                'codigo'            => $item['codigo'] ?? null,
-                'descripcion'       => $item['descripcion'] ?? null,
-                'cantidad'          => $item['cantidad'] ?? null,
-                'area_consumo'      => $item['area_consumo'] ?? null,
-                'centro_costos_item'=> $item['centro_costos_item'] ?? null,
-            ]);
-        } elseif ($request->tipo_solicitud === 'solicitud_mtto') {
-            $solicitud->items()->create([
-                'descripcion'     => $item['descripcion'] ?? null,
-                'especificaciones'=> $item['especificaciones'] ?? null,
-                'cantidad'        => $item['cantidad'] ?? null,
-            ]);
+        $archivoPath = null;
+        if ($request->hasFile('archivo')) {
+            $archivoPath = $request->file('archivo')->store('solicitudes', 'public');
         }
-    }
 
-    // Correo a admins
-    $admins = User::where('is_admin', true)->get();
-    foreach ($admins as $admin) {
-        if ($admin->email) {
-            Mail::to($admin->email)->send(new NuevaSolicitudAdminMail($solicitud));
+        $ultimaSolicitud   = Solicitud::orderBy('id', 'desc')->first();
+        $numeroConsecutivo = $ultimaSolicitud ? ($ultimaSolicitud->id + 1) : 1;
+        $consecutivo       = 'TICKET-' . str_pad($numeroConsecutivo, 4, '0', STR_PAD_LEFT);
+
+        $solicitud = Solicitud::create([
+            'user_id'         => auth()->id(),
+            'consecutivo'     => $consecutivo,
+            'titulo'          => $request->titulo,
+            'tipo_solicitud'  => $request->tipo_solicitud,
+            'area_solicitante'=> $request->area_solicitante,
+            'centro_costos'   => $request->centro_costos,
+            'descripcion'     => $request->descripcion,
+            'archivo'         => $archivoPath,
+            'estado'          => 'pendiente',
+
+            // Nuevos campos
+            'funcion_formato' => $request->tipo_solicitud === 'solicitud_mtto' ? $request->funcion_formato : null,
+            'justificacion'   => $request->tipo_solicitud === 'solicitud_mtto' ? $request->justificacion : null,
+        ]);
+
+        foreach ($request->items as $item) {
+            if ($request->tipo_solicitud === 'estandar') {
+                $solicitud->items()->create([
+                    'referencia' => $item['referencia'] ?? null,
+                    'unidad'     => $item['unidad'] ?? null,
+                    'descripcion'=> $item['descripcion'] ?? null,
+                    'cantidad'   => $item['cantidad'] ?? null,
+                ]);
+            } elseif ($request->tipo_solicitud === 'traslado_bodegas') {
+                $solicitud->items()->create([
+                    'codigo'     => $item['codigo'] ?? null,
+                    'descripcion'=> $item['descripcion'] ?? null,
+                    'cantidad'   => $item['cantidad'] ?? null,
+                    'bodega'     => $item['bodega'] ?? null,
+                ]);
+            } elseif ($request->tipo_solicitud === 'solicitud_pedidos') {
+                $solicitud->items()->create([
+                    'codigo'            => $item['codigo'] ?? null,
+                    'descripcion'       => $item['descripcion'] ?? null,
+                    'cantidad'          => $item['cantidad'] ?? null,
+                    'area_consumo'      => $item['area_consumo'] ?? null,
+                    'centro_costos_item'=> $item['centro_costos_item'] ?? null,
+                ]);
+            } elseif ($request->tipo_solicitud === 'solicitud_mtto') {
+                $solicitud->items()->create([
+                    'descripcion'     => $item['descripcion'] ?? null,
+                    'especificaciones'=> $item['especificaciones'] ?? null,
+                    'cantidad'        => $item['cantidad'] ?? null,
+                ]);
+            }
         }
-    }
 
-    return redirect()
-        ->route('solicitudes.index')
-        ->with('success', 'Solicitud registrada correctamente con consecutivo: ' . $consecutivo);
-}
+        // Correo a admins
+        $admins = User::where('is_admin', true)->get();
+        foreach ($admins as $admin) {
+            if ($admin->email) {
+                Mail::to($admin->email)->send(new NuevaSolicitudAdminMail($solicitud));
+            }
+        }
+
+        return redirect()
+            ->route('solicitudes.index')
+            ->with('success', 'Solicitud registrada correctamente con consecutivo: ' . $consecutivo);
+    }
 
     /**
      * Muestra los detalles de una solicitud específica con comentarios.
      */
     public function show(Solicitud $solicitud)
     {
-        // Admin de compras puede ver todas; usuario normal solo sus propias solicitudes
         if (!Auth::user()->esAdminCompras() && $solicitud->user_id !== Auth::id()) {
             abort(403, 'No tienes permiso para ver esta solicitud');
         }
@@ -176,14 +180,12 @@ public function create(Request $request)
      */
     public function exportPdfRevisados(Solicitud $solicitud)
     {
-        // Solo admin de compras
         if (!Auth::user()->esAdminCompras()) {
             abort(403, 'No tienes permiso para exportar esta solicitud a PDF');
         }
 
         $solicitud->load(['user', 'items']);
 
-        // Solo ítems con revisado = 1
         $itemsRevisados = $solicitud->items->where('revisado', 1);
 
         $pdf = Pdf::loadView('pdf.solicitud', [
@@ -201,15 +203,12 @@ public function create(Request $request)
      */
     public function updateChecklist(Request $request, Solicitud $solicitud)
     {
-        // Solo admin de compras puede marcar revisado (ajusta si quieres otra lógica)
         if (!Auth::user()->esAdminCompras()) {
             abort(403, 'No tienes permiso para actualizar el checklist');
         }
 
-        // IDs de ítems marcados como revisados (checkboxes)
-        $idsRevisados = $request->input('items_revisados', []); // array de IDs o vacío
+        $idsRevisados = $request->input('items_revisados', []); 
 
-        // Recorremos todos los ítems de esa solicitud y actualizamos el flag
         foreach ($solicitud->items as $item) {
             $item->revisado = in_array($item->id, $idsRevisados);
             $item->save();
@@ -237,14 +236,12 @@ public function create(Request $request)
             'estado' => $request->estado,
         ]);
 
-        // === ENVÍO DE CORREO AL USUARIO POR CAMBIO DE ESTADO ===
         $comentario = $request->comentario ?? null;
 
         if ($solicitud->user && $solicitud->user->email) {
             Mail::to($solicitud->user->email)
                 ->send(new CambioEstadoSolicitudMail($solicitud, $comentario));
         }
-        // =======================================================
 
         return redirect()->back()->with('success', 'Estado actualizado exitosamente');
     }
@@ -330,7 +327,7 @@ public function create(Request $request)
 
         $solicitudes = $query->paginate(20)->withQueryString();
 
-        // Estadísticas generales (sobre todas las solicitudes)
+        // Estadísticas generales
         $allSolicitudes = Solicitud::all();
         $stats = [
             'total'      => $allSolicitudes->count(),
@@ -345,9 +342,10 @@ public function create(Request $request)
             'estandar'          => $allSolicitudes->where('tipo_solicitud', 'estandar')->count(),
             'traslado_bodegas'  => $allSolicitudes->where('tipo_solicitud', 'traslado_bodegas')->count(),
             'solicitud_pedidos' => $allSolicitudes->where('tipo_solicitud', 'solicitud_pedidos')->count(),
+            'solicitud_mtto'    => $allSolicitudes->where('tipo_solicitud', 'solicitud_mtto')->count(), // Incluimos el nuevo tipo
         ];
 
-        // Estadísticas por mes (año actual)
+        // Estadísticas por mes
         $solicitudesPorMes = Solicitud::selectRaw('MONTH(created_at) as mes, COUNT(*) as total')
             ->whereYear('created_at', now()->year)
             ->groupBy('mes')
@@ -364,7 +362,6 @@ public function create(Request $request)
 
     /**
      * Exporta el reporte a Excel (solo admin).
-     * (Actualmente usando clase personalizada con ->download()).
      */
     public function exportReport(Request $request)
     {
@@ -420,6 +417,7 @@ public function create(Request $request)
             'estandar'          => $solicitudes->where('tipo_solicitud', 'estandar')->count(),
             'traslado_bodegas'  => $solicitudes->where('tipo_solicitud', 'traslado_bodegas')->count(),
             'solicitud_pedidos' => $solicitudes->where('tipo_solicitud', 'solicitud_pedidos')->count(),
+            'solicitud_mtto'    => $solicitudes->where('tipo_solicitud', 'solicitud_mtto')->count(),
         ];
 
         $filtros = [

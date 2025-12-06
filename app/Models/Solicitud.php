@@ -11,17 +11,20 @@ class Solicitud extends Model
 
     protected $table = 'solicitudes';
 
-    protected $fillable = [
+      protected $fillable = [
         'user_id',
         'consecutivo',
         'titulo',
         'descripcion',
         'tipo_solicitud',
-        'area_solicitante', // se usa en SolicitudController@store
+        'area_solicitante', 
         'centro_costos',
         'archivo',
         'estado',
+        'justificacion',    // <--- AGREGADO
+        'funcion_formato',  // <--- AGREGADO
     ];
+
 
     protected $casts = [
         'estado' => 'string',

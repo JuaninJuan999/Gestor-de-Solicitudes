@@ -1,6 +1,7 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ProfileController; // (Este es el que trae Laravel por defecto, si usas Breeze/Jetstream)
+use App\Http\Controllers\PerfilController;  // <--- Agregamos el NUEVO controlador personalizado
 use App\Http\Controllers\SolicitudController;
 use App\Http\Controllers\AdminComprasController;
 use App\Http\Controllers\ComentarioController;
@@ -17,7 +18,14 @@ Route::get('/dashboard', function () {
 // Rutas para usuarios autenticados
 Route::middleware(['auth'])->group(function () {
 
-    // Rutas de perfil
+    // --- NUEVAS RUTAS DE PERFIL PERSONALIZADO ---
+    Route::get('/perfil', [PerfilController::class, 'edit'])->name('perfil.edit');
+    Route::put('/perfil/update', [PerfilController::class, 'update'])->name('perfil.update');
+    Route::put('/perfil/password', [PerfilController::class, 'updatePassword'])->name('perfil.password');
+    // ---------------------------------------------
+
+    // Rutas de perfil predeterminadas de Laravel (Breeze/Jetstream)
+    // Puedes mantenerlas o quitarlas si solo usarás tu PerfilController
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
