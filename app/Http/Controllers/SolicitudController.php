@@ -382,13 +382,14 @@ class SolicitudController extends Controller
     /**
      * Exporta un resumen de reportes a PDF (solo admin).
      */
-    public function exportReportPdf(Request $request)
+        public function exportReportPdf(Request $request)
     {
         if (!Auth::user()->esAdminCompras()) {
             abort(403, 'No tienes permiso para exportar reportes');
         }
 
-        $query = Solicitud::with('user')->orderBy('created_at', 'desc');
+        // CAMBIO 1: Cargamos 'items' y 'centroCosto' para poder mostrarlos en el detalle
+        $query = Solicitud::with(['user', 'items'])->orderBy('created_at', 'desc');
 
         if ($request->filled('fecha_inicio')) {
             $query->whereDate('created_at', '>=', $request->fecha_inicio);
@@ -427,11 +428,14 @@ class SolicitudController extends Controller
             'tipo_solicitud' => $request->tipo_solicitud,
         ];
 
+        // CAMBIO 2: Pasamos la variable $solicitudes a la vista
+        // CAMBIO 3: Usamos 'landscape' para que quepan mejor las tablas de detalle
         $pdf = Pdf::loadView('pdf.reportes_resumen', [
-            'stats'      => $stats,
-            'statsTipos' => $statsTipos,
-            'filtros'    => $filtros,
-        ])->setPaper('letter', 'portrait');
+            'solicitudes' => $solicitudes,  // <--- Nueva variable enviada
+            'stats'       => $stats,
+            'statsTipos'  => $statsTipos,
+            'filtros'     => $filtros,
+        ])->setPaper('letter', 'landscape');
 
         $fileName = 'reporte-resumen-' . now()->format('Ymd_His') . '.pdf';
 

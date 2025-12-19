@@ -46,7 +46,7 @@ class AdminComprasController extends Controller
 
         // Ordenar por fecha más reciente y paginar
         $solicitudes = $query->orderBy('id', 'desc')
-            ->paginate(5)
+            ->paginate(25)
             ->withQueryString(); // Mantiene los filtros en la paginación
 
         // Obtener todas las áreas únicas para el select del filtro

@@ -5,7 +5,7 @@ Tu solicitud **{{ $solicitud->consecutivo ?? 'sin consecutivo' }}** ha cambiado 
 
 - Tipo: **{{ ucwords(str_replace('_', ' ', $solicitud->tipo_solicitud)) }}**
 - Nuevo estado: **{{ ucfirst($solicitud->estado) }}**
-- Área solicitante: **{{ $solicitud->area_solicitante ?? 'N/A' }}**
+- Área solicitante: **{{ $solicitud->user->area ?? ($solicitud->area_solicitante ?? 'N/A') }}**
 
 @if($comentario)
 **Comentario del área de compras:**
