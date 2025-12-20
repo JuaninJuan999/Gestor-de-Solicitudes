@@ -77,16 +77,19 @@ class SolicitudController extends Controller
      */
     public function store(Request $request)
     {
+        // 1. Validaciones
         $request->validate([
             'titulo'          => 'required|string|max:255',
             'tipo_solicitud'  => 'required|string|in:estandar,traslado_bodegas,solicitud_pedidos,solicitud_mtto',
             'area_solicitante'=> 'nullable|string|max:255',
             'centro_costos'   => 'nullable|string|max:255',
+            'presupuestado'   => 'nullable|string', // Validamos el nuevo campo (solo estandar)
             'descripcion'     => 'required|string',
-            'archivo'         => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:2048',
+            // VALIDACIÓN ARCHIVO CORREGIDA: Agregado xlsx, xls
+            'archivo'         => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png,xlsx,xls|max:5000',
             'items'           => 'required|array|min:1',
 
-            // Solo obligatorio para el nuevo tipo
+            // Solo obligatorio para el nuevo tipo mtto
             'funcion_formato' => 'required_if:tipo_solicitud,solicitud_mtto|in:insumos_activos,servicios_presupuestados',
             'justificacion'   => 'required_if:tipo_solicitud,solicitud_mtto|string|max:1000',
         ]);
@@ -100,6 +103,7 @@ class SolicitudController extends Controller
         $numeroConsecutivo = $ultimaSolicitud ? ($ultimaSolicitud->id + 1) : 1;
         $consecutivo       = 'TICKET-' . str_pad($numeroConsecutivo, 4, '0', STR_PAD_LEFT);
 
+        // 2. Crear Encabezado de Solicitud
         $solicitud = Solicitud::create([
             'user_id'         => auth()->id(),
             'consecutivo'     => $consecutivo,
@@ -107,53 +111,69 @@ class SolicitudController extends Controller
             'tipo_solicitud'  => $request->tipo_solicitud,
             'area_solicitante'=> $request->area_solicitante,
             'centro_costos'   => $request->centro_costos,
+            // Guardamos presupuestado SOLO si viene en el request (estandar)
+            'presupuestado'   => $request->presupuestado ?? null, 
             'descripcion'     => $request->descripcion,
             'archivo'         => $archivoPath,
             'estado'          => 'pendiente',
 
-            // Nuevos campos
+            // Nuevos campos mtto
             'funcion_formato' => $request->tipo_solicitud === 'solicitud_mtto' ? $request->funcion_formato : null,
             'justificacion'   => $request->tipo_solicitud === 'solicitud_mtto' ? $request->justificacion : null,
         ]);
 
+        // 3. Guardar Ítems según el tipo
         foreach ($request->items as $item) {
+            
             if ($request->tipo_solicitud === 'estandar') {
+                // LÓGICA MODIFICADA SOLO PARA ESTÁNDAR
                 $solicitud->items()->create([
-                    'referencia' => $item['referencia'] ?? null,
-                    'unidad'     => $item['unidad'] ?? null,
-                    'descripcion'=> $item['descripcion'] ?? null,
-                    'cantidad'   => $item['cantidad'] ?? null,
+                    'codigo'             => $item['codigo'] ?? null,
+                    'unidad'             => $item['unidad'] ?? null,
+                    'descripcion'        => $item['descripcion'] ?? null,
+                    'cantidad'           => $item['cantidad'] ?? null,
+                    'centro_costos_item' => $item['centro_costos_item'] ?? null,
                 ]);
+
             } elseif ($request->tipo_solicitud === 'traslado_bodegas') {
+                // LÓGICA ORIGINAL
                 $solicitud->items()->create([
-                    'codigo'     => $item['codigo'] ?? null,
-                    'descripcion'=> $item['descripcion'] ?? null,
-                    'cantidad'   => $item['cantidad'] ?? null,
-                    'bodega'     => $item['bodega'] ?? null,
+                    'codigo'      => $item['codigo'] ?? null,
+                    'descripcion' => $item['descripcion'] ?? null,
+                    'cantidad'    => $item['cantidad'] ?? null,
+                    'bodega'      => $item['bodega'] ?? null,
                 ]);
+
             } elseif ($request->tipo_solicitud === 'solicitud_pedidos') {
+                // LÓGICA ORIGINAL
                 $solicitud->items()->create([
-                    'codigo'            => $item['codigo'] ?? null,
-                    'descripcion'       => $item['descripcion'] ?? null,
-                    'cantidad'          => $item['cantidad'] ?? null,
-                    'area_consumo'      => $item['area_consumo'] ?? null,
-                    'centro_costos_item'=> $item['centro_costos_item'] ?? null,
+                    'codigo'             => $item['codigo'] ?? null,
+                    'descripcion'        => $item['descripcion'] ?? null,
+                    'cantidad'           => $item['cantidad'] ?? null,
+                    'area_consumo'       => $item['area_consumo'] ?? null,
+                    'centro_costos_item' => $item['centro_costos_item'] ?? null,
                 ]);
+
             } elseif ($request->tipo_solicitud === 'solicitud_mtto') {
+                // LÓGICA ORIGINAL
                 $solicitud->items()->create([
-                    'descripcion'     => $item['descripcion'] ?? null,
-                    'especificaciones'=> $item['especificaciones'] ?? null,
-                    'cantidad'        => $item['cantidad'] ?? null,
+                    'descripcion'      => $item['descripcion'] ?? null,
+                    'especificaciones' => $item['especificaciones'] ?? null,
+                    'cantidad'         => $item['cantidad'] ?? null,
                 ]);
             }
         }
 
         // Correo a admins
-        $admins = User::where('is_admin', true)->get();
-        foreach ($admins as $admin) {
-            if ($admin->email) {
-                Mail::to($admin->email)->send(new NuevaSolicitudAdminMail($solicitud));
+        try {
+            $admins = User::where('is_admin', true)->get();
+            foreach ($admins as $admin) {
+                if ($admin->email) {
+                    Mail::to($admin->email)->send(new NuevaSolicitudAdminMail($solicitud));
+                }
             }
+        } catch (\Exception $e) {
+            // Log::error('Error enviando correo: ' . $e->getMessage());
         }
 
         return redirect()
@@ -270,7 +290,7 @@ class SolicitudController extends Controller
         $request->validate([
             'titulo' => 'required|string|max:255',
             'descripcion' => 'required|string',
-            'archivo' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:2048',
+            'archivo' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png,xlsx,xls|max:5000',
         ]);
 
         $solicitud->titulo = $request->titulo;
@@ -339,10 +359,10 @@ class SolicitudController extends Controller
 
         // Estadísticas por tipo
         $statsTipos = [
-            'estandar'          => $allSolicitudes->where('tipo_solicitud', 'estandar')->count(),
-            'traslado_bodegas'  => $allSolicitudes->where('tipo_solicitud', 'traslado_bodegas')->count(),
-            'solicitud_pedidos' => $allSolicitudes->where('tipo_solicitud', 'solicitud_pedidos')->count(),
-            'solicitud_mtto'    => $allSolicitudes->where('tipo_solicitud', 'solicitud_mtto')->count(), // Incluimos el nuevo tipo
+            'estandar'           => $allSolicitudes->where('tipo_solicitud', 'estandar')->count(),
+            'traslado_bodegas'   => $allSolicitudes->where('tipo_solicitud', 'traslado_bodegas')->count(),
+            'solicitud_pedidos'  => $allSolicitudes->where('tipo_solicitud', 'solicitud_pedidos')->count(),
+            'solicitud_mtto'     => $allSolicitudes->where('tipo_solicitud', 'solicitud_mtto')->count(), 
         ];
 
         // Estadísticas por mes
@@ -382,13 +402,12 @@ class SolicitudController extends Controller
     /**
      * Exporta un resumen de reportes a PDF (solo admin).
      */
-        public function exportReportPdf(Request $request)
+    public function exportReportPdf(Request $request)
     {
         if (!Auth::user()->esAdminCompras()) {
             abort(403, 'No tienes permiso para exportar reportes');
         }
 
-        // CAMBIO 1: Cargamos 'items' y 'centroCosto' para poder mostrarlos en el detalle
         $query = Solicitud::with(['user', 'items'])->orderBy('created_at', 'desc');
 
         if ($request->filled('fecha_inicio')) {
@@ -415,10 +434,10 @@ class SolicitudController extends Controller
         ];
 
         $statsTipos = [
-            'estandar'          => $solicitudes->where('tipo_solicitud', 'estandar')->count(),
-            'traslado_bodegas'  => $solicitudes->where('tipo_solicitud', 'traslado_bodegas')->count(),
-            'solicitud_pedidos' => $solicitudes->where('tipo_solicitud', 'solicitud_pedidos')->count(),
-            'solicitud_mtto'    => $solicitudes->where('tipo_solicitud', 'solicitud_mtto')->count(),
+            'estandar'           => $solicitudes->where('tipo_solicitud', 'estandar')->count(),
+            'traslado_bodegas'   => $solicitudes->where('tipo_solicitud', 'traslado_bodegas')->count(),
+            'solicitud_pedidos'  => $solicitudes->where('tipo_solicitud', 'solicitud_pedidos')->count(),
+            'solicitud_mtto'     => $solicitudes->where('tipo_solicitud', 'solicitud_mtto')->count(),
         ];
 
         $filtros = [
@@ -428,10 +447,8 @@ class SolicitudController extends Controller
             'tipo_solicitud' => $request->tipo_solicitud,
         ];
 
-        // CAMBIO 2: Pasamos la variable $solicitudes a la vista
-        // CAMBIO 3: Usamos 'landscape' para que quepan mejor las tablas de detalle
         $pdf = Pdf::loadView('pdf.reportes_resumen', [
-            'solicitudes' => $solicitudes,  // <--- Nueva variable enviada
+            'solicitudes' => $solicitudes, 
             'stats'       => $stats,
             'statsTipos'  => $statsTipos,
             'filtros'     => $filtros,

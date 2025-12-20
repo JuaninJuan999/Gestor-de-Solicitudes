@@ -29,6 +29,19 @@
                 
                 <h2 class="text-2xl font-bold text-blue-600 mb-6">Registrar Solicitud de Compra Estándar</h2>
 
+                <!-- BLOQUE DE ERRORES (NUEVO) -->
+                @if ($errors->any())
+                    <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+                        <strong class="font-bold">¡Por favor corrige los siguientes errores:</strong>
+                        <ul class="mt-2 list-disc list-inside">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+                <!-- FIN BLOQUE DE ERRORES -->
+
                 <form action="{{ route('solicitudes.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
 
@@ -40,21 +53,33 @@
                         <label for="titulo" class="block text-sm font-medium text-gray-700 mb-2">
                             Título de la solicitud:
                         </label>
-                        <input type="text" name="titulo" id="titulo" required
+                        <input type="text" name="titulo" id="titulo" value="{{ old('titulo') }}" required
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                     </div>
 
-                    <!-- Centro de costo y área -->
+                    <!-- Nuevo Campo: Presupuestado (SI/NO) -->
+                    <div class="mb-6">
+                        <label for="presupuestado" class="block text-sm font-medium text-gray-700 mb-2">
+                            ¿Es presupuestado?
+                        </label>
+                        <select name="presupuestado" id="presupuestado" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                            <option value="">Seleccione...</option>
+                            <option value="SI" {{ old('presupuestado') == 'SI' ? 'selected' : '' }}>SI</option>
+                            <option value="NO" {{ old('presupuestado') == 'NO' ? 'selected' : '' }}>NO</option>
+                        </select>
+                    </div>
+
+                    <!-- Centro de costo y área (Global) -->
                     <div class="mb-6">
                         <label for="centro_costos" class="block text-sm font-bold text-gray-700 mb-2">
-                            Centro de Costo y Área
+                            Centro de Costo y Área (Solicitante)
                         </label>
                         <select name="centro_costos" id="centro_costos" required class="w-full px-4 py-2 border rounded-lg">
                             <option value="">Seleccione centro de costo y área...</option>
                             @foreach($centrosCostos->groupBy('departamento') as $depto => $areas)
                                 <optgroup label="{{ $depto }}">
                                     @foreach($areas as $area)
-                                        <option value="{{ "{$area->cc}-{$area->sc}" }}">
+                                        <option value="{{ "{$area->cc}-{$area->sc}" }}" {{ old('centro_costos') == "{$area->cc}-{$area->sc}" ? 'selected' : '' }}>
                                             {{ $area->cc }}-{{ $area->sc }} | {{ $area->nombre_area }} ({{ $area->cuenta_contable }})
                                         </option>
                                     @endforeach
@@ -72,17 +97,18 @@
                             <table class="min-w-full border-collapse border border-gray-300">
                                 <thead class="bg-green-600 text-white">
                                     <tr>
-                                        <th class="border border-gray-300 px-4 py-2">REFERENCIA</th>
-                                        <th class="border border-gray-300 px-4 py-2">UNIDAD</th>
+                                        <th class="border border-gray-300 px-4 py-2">CÓDIGO SIIMED</th>
+                                        <th class="border border-gray-300 px-4 py-2">UNIDAD DE MEDIDA</th>
                                         <th class="border border-gray-300 px-4 py-2">DESCRIPCION</th>
                                         <th class="border border-gray-300 px-4 py-2">CANTIDAD</th>
+                                        <th class="border border-gray-300 px-4 py-2">CENTRO DE COSTO</th>
                                         <th class="border border-gray-300 px-4 py-2">ACCIÓN</th>
                                     </tr>
                                 </thead>
                                 <tbody id="itemsTable">
                                     <tr>
                                         <td class="border border-gray-300 px-4 py-2">
-                                            <input type="text" name="items[0][referencia]" class="w-full px-2 py-1 border rounded">
+                                            <input type="text" name="items[0][codigo]" class="w-full px-2 py-1 border rounded">
                                         </td>
                                         <td class="border border-gray-300 px-4 py-2">
                                             <input type="text" name="items[0][unidad]" class="w-full px-2 py-1 border rounded">
@@ -92,6 +118,9 @@
                                         </td>
                                         <td class="border border-gray-300 px-4 py-2">
                                             <input type="number" name="items[0][cantidad]" class="w-full px-2 py-1 border rounded">
+                                        </td>
+                                        <td class="border border-gray-300 px-4 py-2">
+                                            <input type="text" name="items[0][centro_costos_item]" class="w-full px-2 py-1 border rounded">
                                         </td>
                                         <td class="border border-gray-300 px-4 py-2 text-center">
                                             <button type="button" onclick="eliminarFila(this)" class="text-red-600 hover:text-red-800 font-bold text-xl">
@@ -114,7 +143,7 @@
                             Observaciones:
                         </label>
                         <textarea name="descripcion" id="descripcion" rows="4" required
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg"></textarea>
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg">{{ old('descripcion') }}</textarea>
                     </div>
 
                     <!-- Archivo -->
@@ -149,7 +178,7 @@
         const fila = `
             <tr>
                 <td class="border border-gray-300 px-4 py-2">
-                    <input type="text" name="items[${filaIndex}][referencia]" class="w-full px-2 py-1 border rounded">
+                    <input type="text" name="items[${filaIndex}][codigo]" class="w-full px-2 py-1 border rounded">
                 </td>
                 <td class="border border-gray-300 px-4 py-2">
                     <input type="text" name="items[${filaIndex}][unidad]" class="w-full px-2 py-1 border rounded">
@@ -159,6 +188,9 @@
                 </td>
                 <td class="border border-gray-300 px-4 py-2">
                     <input type="number" name="items[${filaIndex}][cantidad]" class="w-full px-2 py-1 border rounded">
+                </td>
+                <td class="border border-gray-300 px-4 py-2">
+                    <input type="text" name="items[${filaIndex}][centro_costos_item]" class="w-full px-2 py-1 border rounded">
                 </td>
                 <td class="border border-gray-300 px-4 py-2 text-center">
                     <button type="button" onclick="eliminarFila(this)" class="text-red-600 hover:text-red-800 font-bold text-xl">
@@ -182,5 +214,4 @@
     }
 </script>
 @endsection
-
 

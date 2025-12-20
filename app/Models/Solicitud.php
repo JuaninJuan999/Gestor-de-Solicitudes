@@ -19,6 +19,7 @@ class Solicitud extends Model
         'tipo_solicitud',
         'area_solicitante', 
         'centro_costos',
+        'presupuestado', 
         'archivo',
         'estado',
         'justificacion',    // <--- AGREGADO

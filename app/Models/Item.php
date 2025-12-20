@@ -11,7 +11,6 @@ class Item extends Model
 
     protected $fillable = [
         'solicitud_id',
-        'referencia',
         'codigo',      // ← LÍNEA AGREGADA
         'unidad',
         'descripcion',

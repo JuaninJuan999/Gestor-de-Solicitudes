@@ -1,7 +1,6 @@
 {{-- Vista: Listado de solicitudes del usuario autenticado --}}
 @extends('layouts.app')
 
-
 @section('content')
 <!-- Contenedor con fondo de imagen -->
 <div style="background-image: url('/images/create-solicitud.jpg'); 
@@ -28,13 +27,11 @@
                     </a>
                 </div>
 
-
                 @if(session('success'))
                     <div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
                         {{ session('success') }}
                     </div>
                 @endif
-
 
                 <div class="mb-6 bg-white bg-opacity-80 border-2 border-green-500 rounded-lg p-5 shadow-md">
                     <form method="GET" action="{{ route('solicitudes.index') }}" class="flex flex-wrap gap-4 items-end">
@@ -72,7 +69,6 @@
                     </form>
                 </div>
 
-
                 @if(!$solicitudes->isEmpty())
                     <div class="mb-4 flex items-center gap-3">
                         <span class="px-4 py-2 bg-blue-100 text-blue-800 font-semibold rounded-lg text-sm">
@@ -90,7 +86,6 @@
                         @endif
                     </div>
                 @endif
-
 
                 @if($solicitudes->isEmpty())
                     <div class="text-center py-12 bg-white bg-opacity-60 rounded-lg border-2 border-dashed border-gray-300">
@@ -144,11 +139,21 @@
                                                 } elseif ($solicitud->tipo_solicitud == 'solicitud_pedidos') {
                                                     $etiquetaTipo = 'Solicitud de Pedidos';
                                                     $colorTipo = 'bg-yellow-600';
+                                                } elseif ($solicitud->tipo_solicitud == 'solicitud_mtto') {
+                                                    $etiquetaTipo = 'Solicitud Insumos / Servicio';
+                                                    $colorTipo = 'bg-purple-700';
                                                 }
                                             @endphp
                                             <span class="px-3 py-1 {{ $colorTipo }} text-white rounded-lg text-sm font-semibold">
                                                 {{ $etiquetaTipo }}
                                             </span>
+
+                                            <!-- Etiqueta Presupuestado (NUEVO) -->
+                                            @if($solicitud->presupuestado)
+                                                <span class="px-3 py-1 {{ $solicitud->presupuestado == 'SI' ? 'bg-indigo-600' : 'bg-red-500' }} text-white rounded-lg text-sm font-semibold">
+                                                    Presupuestado: {{ $solicitud->presupuestado }}
+                                                </span>
+                                            @endif
                                         </div>
                                         <h3 class="text-xl font-bold text-gray-800">{{ $solicitud->titulo }}</h3>
                                         <p class="text-sm text-gray-600 mt-1">
@@ -180,7 +185,6 @@
                                     </div>
                                 </div>
 
-
                                 <!-- Tabla de items solicitados por tipo -->
                                 @php
                                     $itemsTabla = $solicitud->items ?? collect();
@@ -196,43 +200,49 @@
                                     }
                                 @endphp
 
-
                                 @if($itemsTabla->isNotEmpty() || !empty($itemsJson))
                                     <div class="mb-4">
                                         <h4 class="text-sm font-semibold text-gray-700 mb-2">Items solicitados:</h4>
                                         <div class="overflow-x-auto">
+                                            
+                                            <!-- ESTÁNDAR -->
                                             @if($solicitud->tipo_solicitud == 'estandar')
                                                 <table class="min-w-full border-collapse border border-gray-300">
                                                     <thead class="bg-green-600 text-white">
                                                         <tr>
-                                                            <th class="border border-gray-300 px-4 py-2 text-left">REFERENCIA</th>
-                                                            <th class="border border-gray-300 px-4 py-2 text-center">UNIDAD</th>
+                                                            <th class="border border-gray-300 px-4 py-2 text-left">CÓDIGO SIIMED</th>
+                                                            <th class="border border-gray-300 px-4 py-2 text-center">UNIDAD DE MEDIDA</th>
                                                             <th class="border border-gray-300 px-4 py-2 text-left">DESCRIPCIÓN</th>
                                                             <th class="border border-gray-300 px-4 py-2 text-center">CANTIDAD</th>
+                                                            <th class="border border-gray-300 px-4 py-2 text-center">CENTRO DE COSTO</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody class="bg-white">
                                                         @if($itemsTabla->isNotEmpty())
                                                             @foreach($itemsTabla as $item)
                                                                 <tr class="hover:bg-gray-50">
-                                                                    <td class="border border-gray-300 px-4 py-2">{{ $item->referencia ?? '-' }}</td>
+                                                                    <td class="border border-gray-300 px-4 py-2">{{ $item->codigo ?? '-' }}</td>
                                                                     <td class="border border-gray-300 px-4 py-2 text-center">{{ $item->unidad ?? '-' }}</td>
                                                                     <td class="border border-gray-300 px-4 py-2">{{ $item->descripcion ?? '-' }}</td>
                                                                     <td class="border border-gray-300 px-4 py-2 text-center">{{ $item->cantidad ?? '-' }}</td>
+                                                                    <td class="border border-gray-300 px-4 py-2 text-center">{{ $item->centro_costos_item ?? '-' }}</td>
                                                                 </tr>
                                                             @endforeach
                                                         @else
                                                             @foreach($itemsJson as $item)
                                                                 <tr class="hover:bg-gray-50">
-                                                                    <td class="border border-gray-300 px-4 py-2">{{ $item['referencia'] ?? '-' }}</td>
+                                                                    <td class="border border-gray-300 px-4 py-2">{{ $item['codigo'] ?? '-' }}</td>
                                                                     <td class="border border-gray-300 px-4 py-2 text-center">{{ $item['unidad'] ?? '-' }}</td>
                                                                     <td class="border border-gray-300 px-4 py-2">{{ $item['descripcion'] ?? '-' }}</td>
                                                                     <td class="border border-gray-300 px-4 py-2 text-center">{{ $item['cantidad'] ?? '-' }}</td>
+                                                                    <td class="border border-gray-300 px-4 py-2 text-center">{{ $item['centro_costos_item'] ?? '-' }}</td>
                                                                 </tr>
                                                             @endforeach
                                                         @endif
                                                     </tbody>
                                                 </table>
+
+                                            <!-- TRASLADO BODEGAS -->
                                             @elseif($solicitud->tipo_solicitud == 'traslado_bodegas')
                                                 <table class="min-w-full border-collapse border border-gray-300">
                                                     <thead class="bg-blue-600 text-white">
@@ -265,6 +275,8 @@
                                                         @endif
                                                     </tbody>
                                                 </table>
+
+                                            <!-- SOLICITUD PEDIDOS -->
                                             @elseif($solicitud->tipo_solicitud == 'solicitud_pedidos')
                                                 <table class="min-w-full border-collapse border border-gray-300">
                                                     <thead class="bg-yellow-600 text-white">
@@ -300,11 +312,33 @@
                                                         @endif
                                                     </tbody>
                                                 </table>
+
+                                            <!-- SOLICITUD MTTO (NUEVO) -->
+                                            @elseif($solicitud->tipo_solicitud == 'solicitud_mtto')
+                                                <table class="min-w-full border-collapse border border-gray-300">
+                                                    <thead class="bg-purple-600 text-white">
+                                                        <tr>
+                                                            <th class="border border-gray-300 px-4 py-2 text-left">DESCRIPCIÓN</th>
+                                                            <th class="border border-gray-300 px-4 py-2 text-left">ESPECIFICACIONES</th>
+                                                            <th class="border border-gray-300 px-4 py-2 text-center">CANTIDAD</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="bg-white">
+                                                        @if($itemsTabla->isNotEmpty())
+                                                            @foreach($itemsTabla as $item)
+                                                                <tr class="hover:bg-gray-50">
+                                                                    <td class="border border-gray-300 px-4 py-2">{{ $item->descripcion ?? '-' }}</td>
+                                                                    <td class="border border-gray-300 px-4 py-2">{{ $item->especificaciones ?? '-' }}</td>
+                                                                    <td class="border border-gray-300 px-4 py-2 text-center">{{ $item->cantidad ?? '-' }}</td>
+                                                                </tr>
+                                                            @endforeach
+                                                        @endif
+                                                    </tbody>
+                                                </table>
                                             @endif
                                         </div>
                                     </div>
                                 @endif
-
 
                                 <!-- Observaciones -->
                                 @if(!empty($observaciones) && $observaciones != '')
@@ -313,7 +347,6 @@
                                         <p class="text-gray-600">{{ $observaciones }}</p>
                                     </div>
                                 @endif
-
 
                                 <!-- Archivo adjunto -->
                                 @if($solicitud->archivo)
@@ -325,7 +358,6 @@
                                         </a>
                                     </div>
                                 @endif
-
 
                                 <!-- Botón Ver Detalle y Comentarios -->
                                 <div class="mt-4 pt-4 border-t border-gray-200">
@@ -341,7 +373,6 @@
                         {{ $solicitudes->links() }}
                     </div>
                 @endif
-
 
             </div>
         </div>

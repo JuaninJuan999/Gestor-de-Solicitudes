@@ -98,7 +98,7 @@
                         @endif
                     </div>
 
-                    <!-- Fecha como etiqueta -->
+                    <!-- Fecha -->
                     <div class="bg-white/70 p-4 rounded-xl shadow">
                         <label class="block text-sm font-bold text-gray-700 mb-2">Fecha:</label>
                         <span class="px-3 py-1 bg-gray-200 text-gray-800 rounded-lg text-sm font-semibold">
@@ -106,7 +106,7 @@
                         </span>
                     </div>
 
-                    <!-- Centro de costos como etiqueta -->
+                    <!-- Centro de costos -->
                     <div class="bg-white/70 p-4 rounded-xl shadow">
                         <label class="block text-sm font-bold text-gray-700 mb-2">Centro de Costos:</label>
                         <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-lg text-sm font-semibold">
@@ -114,7 +114,17 @@
                         </span>
                     </div>
 
-                    <!-- Título como etiqueta, ocupando toda la fila -->
+                    <!-- NUEVO CAMPO PRESUPUESTADO -->
+                    @if($solicitud->presupuestado)
+                    <div class="bg-white/70 p-4 rounded-xl shadow">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">¿Presupuestado?:</label>
+                        <span class="px-3 py-1 {{ $solicitud->presupuestado == 'SI' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }} rounded-lg text-sm font-semibold">
+                            {{ $solicitud->presupuestado }}
+                        </span>
+                    </div>
+                    @endif
+
+                    <!-- Título -->
                     <div class="bg-white/70 p-4 rounded-xl shadow md:col-span-3">
                         <label class="block text-sm font-bold text-gray-700 mb-2">Título de la Solicitud:</label>
                         <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-lg text-sm font-semibold inline-block">
@@ -122,7 +132,7 @@
                         </span>
                     </div>
 
-                    <!-- Campos específicos para Solicitud Insumos / Servicio -->
+                    <!-- Campos específicos Mtto -->
                     @if($solicitud->tipo_solicitud == 'solicitud_mtto')
                         <div class="bg-white/70 p-4 rounded-xl shadow md:col-span-3">
                             <label class="block text-sm font-bold text-gray-700 mb-2">Función del Formato:</label>
@@ -169,6 +179,8 @@
 
                 @if($itemsTabla->isNotEmpty() || !empty($itemsJson))
                     <div class="overflow-x-auto bg-white/70 rounded-xl shadow mb-4">
+                        
+                        <!-- TABLA PARA ESTÁNDAR (CON CAMBIOS) -->
                         @if($solicitud->tipo_solicitud == 'estandar')
                             <table class="min-w-full border-collapse border border-gray-300">
                                 <thead class="bg-green-600 text-white">
@@ -176,43 +188,36 @@
                                         @if(Auth::user()->esAdminCompras())
                                             <th class="border border-gray-300 px-4 py-2 text-center">✔</th>
                                         @endif
-                                        <th class="border border-gray-300 px-4 py-2 text-left">REFERENCIA</th>
-                                        <th class="border border-gray-300 px-4 py-2 text-center">UNIDAD</th>
+                                        <th class="border border-gray-300 px-4 py-2 text-left">CÓDIGO SIIMED</th>
+                                        <th class="border border-gray-300 px-4 py-2 text-center">UNIDAD DE MEDIDA</th>
                                         <th class="border border-gray-300 px-4 py-2 text-left">DESCRIPCIÓN</th>
                                         <th class="border border-gray-300 px-4 py-2 text-center">CANTIDAD</th>
+                                        <th class="border border-gray-300 px-4 py-2 text-center">CENTRO DE COSTO</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white">
-                                    @if($itemsTabla->isNotEmpty())
-                                        @foreach($itemsTabla as $item)
-                                            <tr class="hover:bg-gray-50 {{ $item->revisado ? 'bg-green-50' : '' }}">
-                                                @if(Auth::user()->esAdminCompras())
-                                                    <td class="border border-gray-300 px-4 py-2 text-center">
-                                                        <input type="checkbox"
-                                                               name="items_revisados[]"
-                                                               value="{{ $item->id }}"
-                                                               class="w-4 h-4"
-                                                               {{ $item->revisado ? 'checked' : '' }}>
-                                                    </td>
-                                                @endif
-                                                <td class="border border-gray-300 px-4 py-2">{{ $item->referencia ?? '-' }}</td>
-                                                <td class="border border-gray-300 px-4 py-2 text-center">{{ $item->unidad ?? '-' }}</td>
-                                                <td class="border border-gray-300 px-4 py-2">{{ $item->descripcion ?? '-' }}</td>
-                                                <td class="border border-gray-300 px-4 py-2 text-center">{{ $item->cantidad ?? '-' }}</td>
-                                            </tr>
-                                        @endforeach
-                                    @else
-                                        @foreach($itemsJson as $item)
-                                            <tr class="hover:bg-gray-50">
-                                                <td class="border border-gray-300 px-4 py-2">{{ $item['referencia'] ?? '-' }}</td>
-                                                <td class="border border-gray-300 px-4 py-2 text-center">{{ $item['unidad'] ?? '-' }}</td>
-                                                <td class="border border-gray-300 px-4 py-2">{{ $item['descripcion'] ?? '-' }}</td>
-                                                <td class="border border-gray-300 px-4 py-2 text-center">{{ $item['cantidad'] ?? '-' }}</td>
-                                            </tr>
-                                        @endforeach
-                                    @endif
+                                    @foreach($itemsTabla as $item)
+                                        <tr class="hover:bg-gray-50 {{ $item->revisado ? 'bg-green-50' : '' }}">
+                                            @if(Auth::user()->esAdminCompras())
+                                                <td class="border border-gray-300 px-4 py-2 text-center">
+                                                    <input type="checkbox"
+                                                           name="items_revisados[]"
+                                                           value="{{ $item->id }}"
+                                                           class="w-4 h-4"
+                                                           {{ $item->revisado ? 'checked' : '' }}>
+                                                </td>
+                                            @endif
+                                            <td class="border border-gray-300 px-4 py-2">{{ $item->codigo ?? '-' }}</td>
+                                            <td class="border border-gray-300 px-4 py-2 text-center">{{ $item->unidad ?? '-' }}</td>
+                                            <td class="border border-gray-300 px-4 py-2">{{ $item->descripcion ?? '-' }}</td>
+                                            <td class="border border-gray-300 px-4 py-2 text-center">{{ $item->cantidad ?? '-' }}</td>
+                                            <td class="border border-gray-300 px-4 py-2 text-center">{{ $item->centro_costos_item ?? '-' }}</td>
+                                        </tr>
+                                    @endforeach
                                 </tbody>
                             </table>
+
+                        <!-- TABLA PARA TRASLADOS -->
                         @elseif($solicitud->tipo_solicitud == 'traslado_bodegas')
                             <table class="min-w-full border-collapse border border-gray-300">
                                 <thead class="bg-blue-600 text-white">
@@ -227,36 +232,27 @@
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white">
-                                    @if($itemsTabla->isNotEmpty())
-                                        @foreach($itemsTabla as $item)
-                                            <tr class="hover:bg-gray-50 {{ $item->revisado ? 'bg-green-50' : '' }}">
-                                                @if(Auth::user()->esAdminCompras())
-                                                    <td class="border border-gray-300 px-4 py-2 text-center">
-                                                        <input type="checkbox"
-                                                               name="items_revisados[]"
-                                                               value="{{ $item->id }}"
-                                                               class="w-4 h-4"
-                                                               {{ $item->revisado ? 'checked' : '' }}>
-                                                    </td>
-                                                @endif
-                                                <td class="border border-gray-300 px-4 py-2">{{ $item->codigo ?? '-' }}</td>
-                                                <td class="border border-gray-300 px-4 py-2">{{ $item->descripcion ?? '-' }}</td>
-                                                <td class="border border-gray-300 px-4 py-2 text-center">{{ $item->cantidad ?? '-' }}</td>
-                                                <td class="border border-gray-300 px-4 py-2">{{ $item->bodega ?? '-' }}</td>
-                                            </tr>
-                                        @endforeach
-                                    @else
-                                        @foreach($itemsJson as $item)
-                                            <tr class="hover:bg-gray-50">
-                                                <td class="border border-gray-300 px-4 py-2">{{ $item['codigo'] ?? '-' }}</td>
-                                                <td class="border border-gray-300 px-4 py-2">{{ $item['descripcion'] ?? '-' }}</td>
-                                                <td class="border border-gray-300 px-4 py-2 text-center">{{ $item['cantidad'] ?? '-' }}</td>
-                                                <td class="border border-gray-300 px-4 py-2">{{ $item['bodega'] ?? '-' }}</td>
-                                            </tr>
-                                        @endforeach
-                                    @endif
+                                    @foreach($itemsTabla as $item)
+                                        <tr class="hover:bg-gray-50 {{ $item->revisado ? 'bg-green-50' : '' }}">
+                                            @if(Auth::user()->esAdminCompras())
+                                                <td class="border border-gray-300 px-4 py-2 text-center">
+                                                    <input type="checkbox"
+                                                           name="items_revisados[]"
+                                                           value="{{ $item->id }}"
+                                                           class="w-4 h-4"
+                                                           {{ $item->revisado ? 'checked' : '' }}>
+                                                </td>
+                                            @endif
+                                            <td class="border border-gray-300 px-4 py-2">{{ $item->codigo ?? '-' }}</td>
+                                            <td class="border border-gray-300 px-4 py-2">{{ $item->descripcion ?? '-' }}</td>
+                                            <td class="border border-gray-300 px-4 py-2 text-center">{{ $item->cantidad ?? '-' }}</td>
+                                            <td class="border border-gray-300 px-4 py-2">{{ $item->bodega ?? '-' }}</td>
+                                        </tr>
+                                    @endforeach
                                 </tbody>
                             </table>
+
+                        <!-- TABLA PARA PEDIDOS -->
                         @elseif($solicitud->tipo_solicitud == 'solicitud_pedidos')
                             <table class="min-w-full border-collapse border border-gray-300">
                                 <thead class="bg-yellow-600 text-white">
@@ -272,38 +268,28 @@
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white">
-                                    @if($itemsTabla->isNotEmpty())
-                                        @foreach($itemsTabla as $item)
-                                            <tr class="{{ $item->revisado ? 'bg-green-50' : '' }}">
-                                                @if(Auth::user()->esAdminCompras())
-                                                    <td class="border px-4 py-2 text-center">
-                                                        <input type="checkbox"
-                                                               name="items_revisados[]"
-                                                               value="{{ $item->id }}"
-                                                               class="w-4 h-4"
-                                                               {{ $item->revisado ? 'checked' : '' }}>
-                                                    </td>
-                                                @endif
-                                                <td class="border px-4 py-2">{{ $item->codigo ?? '-' }}</td>
-                                                <td class="border px-4 py-2">{{ $item->descripcion ?? '-' }}</td>
-                                                <td class="border px-4 py-2">{{ $item->cantidad ?? '-' }}</td>
-                                                <td class="border px-4 py-2">{{ $item->area_consumo ?? '-' }}</td>
-                                                <td class="border px-4 py-2">{{ $item->centro_costos_item ?? '-' }}</td>
-                                            </tr>
-                                        @endforeach
-                                    @else
-                                        @foreach($itemsJson as $item)
-                                            <tr>
-                                                <td class="border px-4 py-2">{{ $item['codigo'] ?? '-' }}</td>
-                                                <td class="border px-4 py-2">{{ $item['descripcion'] ?? '-' }}</td>
-                                                <td class="border px-4 py-2">{{ $item['cantidad'] ?? '-' }}</td>
-                                                <td class="border px-4 py-2">{{ $item['area_consumo'] ?? '-' }}</td>
-                                                <td class="border px-4 py-2">{{ $item['centro_costos_item'] ?? '-' }}</td>
-                                            </tr>
-                                        @endforeach
-                                    @endif
+                                    @foreach($itemsTabla as $item)
+                                        <tr class="{{ $item->revisado ? 'bg-green-50' : '' }}">
+                                            @if(Auth::user()->esAdminCompras())
+                                                <td class="border px-4 py-2 text-center">
+                                                    <input type="checkbox"
+                                                           name="items_revisados[]"
+                                                           value="{{ $item->id }}"
+                                                           class="w-4 h-4"
+                                                           {{ $item->revisado ? 'checked' : '' }}>
+                                                </td>
+                                            @endif
+                                            <td class="border px-4 py-2">{{ $item->codigo ?? '-' }}</td>
+                                            <td class="border px-4 py-2">{{ $item->descripcion ?? '-' }}</td>
+                                            <td class="border px-4 py-2">{{ $item->cantidad ?? '-' }}</td>
+                                            <td class="border px-4 py-2">{{ $item->area_consumo ?? '-' }}</td>
+                                            <td class="border px-4 py-2">{{ $item->centro_costos_item ?? '-' }}</td>
+                                        </tr>
+                                    @endforeach
                                 </tbody>
                             </table>
+
+                        <!-- TABLA PARA MANTENIMIENTO -->
                         @elseif($solicitud->tipo_solicitud == 'solicitud_mtto')
                             <table class="min-w-full border-collapse border border-gray-300">
                                 <thead class="bg-purple-600 text-white">
@@ -317,32 +303,22 @@
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white">
-                                    @if($itemsTabla->isNotEmpty())
-                                        @foreach($itemsTabla as $item)
-                                            <tr class="hover:bg-gray-50 {{ $item->revisado ? 'bg-green-50' : '' }}">
-                                                @if(Auth::user()->esAdminCompras())
-                                                    <td class="border border-gray-300 px-4 py-2 text-center">
-                                                        <input type="checkbox"
-                                                               name="items_revisados[]"
-                                                               value="{{ $item->id }}"
-                                                               class="w-4 h-4"
-                                                               {{ $item->revisado ? 'checked' : '' }}>
-                                                    </td>
-                                                @endif
-                                                <td class="border border-gray-300 px-4 py-2">{{ $item->descripcion ?? '-' }}</td>
-                                                <td class="border border-gray-300 px-4 py-2">{{ $item->especificaciones ?? '-' }}</td>
-                                                <td class="border border-gray-300 px-4 py-2 text-center">{{ $item->cantidad ?? '-' }}</td>
-                                            </tr>
-                                        @endforeach
-                                    @else
-                                        @foreach($itemsJson as $item)
-                                            <tr class="hover:bg-gray-50">
-                                                <td class="border border-gray-300 px-4 py-2">{{ $item['descripcion'] ?? '-' }}</td>
-                                                <td class="border border-gray-300 px-4 py-2">{{ $item['especificaciones'] ?? '-' }}</td>
-                                                <td class="border border-gray-300 px-4 py-2 text-center">{{ $item['cantidad'] ?? '-' }}</td>
-                                            </tr>
-                                        @endforeach
-                                    @endif
+                                    @foreach($itemsTabla as $item)
+                                        <tr class="hover:bg-gray-50 {{ $item->revisado ? 'bg-green-50' : '' }}">
+                                            @if(Auth::user()->esAdminCompras())
+                                                <td class="border border-gray-300 px-4 py-2 text-center">
+                                                    <input type="checkbox"
+                                                           name="items_revisados[]"
+                                                           value="{{ $item->id }}"
+                                                           class="w-4 h-4"
+                                                           {{ $item->revisado ? 'checked' : '' }}>
+                                                </td>
+                                            @endif
+                                            <td class="border border-gray-300 px-4 py-2">{{ $item->descripcion ?? '-' }}</td>
+                                            <td class="border border-gray-300 px-4 py-2">{{ $item->especificaciones ?? '-' }}</td>
+                                            <td class="border border-gray-300 px-4 py-2 text-center">{{ $item->cantidad ?? '-' }}</td>
+                                        </tr>
+                                    @endforeach
                                 </tbody>
                             </table>
                         @endif
