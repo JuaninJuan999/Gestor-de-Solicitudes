@@ -49,7 +49,8 @@
                         <label for="centro_costos" class="block text-sm font-medium text-gray-700 mb-2">
                             Centro de Costos:
                         </label>
-                        <select name="centro_costos" id="centro_costos" required class="w-full px-4 py-2 border rounded-lg">
+                        <select name="centro_costos" id="centro_costos" required 
+                                class="w-full px-4 py-2 border rounded-lg centro-costo-select">
                             <option value="">Seleccione centro de costo y área...</option>
                             @foreach($centrosCostos->groupBy('departamento') as $depto => $areas)
                                 <optgroup label="{{ $depto }}">
@@ -91,14 +92,14 @@
                                             <input type="number" name="items[0][cantidad]" class="w-full px-2 py-1 border rounded">
                                         </td>
                                         <td class="border border-gray-300 px-4 py-2">
-                                            <!-- Select de bodega (REPLICADO CON GRUPOS) -->
-                                            <select name="items[0][bodega]" required class="w-full px-2 py-1 border rounded">
+                                            <!-- Select de bodega (con búsqueda) -->
+                                            <select name="items[0][bodega]" required 
+                                                    class="w-full px-2 py-1 border rounded centro-costo-select">
                                                 <option value="">Seleccione bodega destino...</option>
                                                 @foreach($centrosCostos->groupBy('departamento') as $depto => $areas)
                                                     <optgroup label="{{ $depto }}">
                                                         @foreach($areas as $area)
-                                                            {{-- NOTA: Value guarda nombre_area para compatibilidad, 
-                                                                 pero visualmente muestra CC-SC | NOMBRE (CUENTA) --}}
+                                                            {{-- value = nombre_area (como ya lo tienes) --}}
                                                             <option value="{{ $area->nombre_area }}">
                                                                 {{ $area->cc }}-{{ $area->sc }} | {{ $area->nombre_area }} ({{ $area->cuenta_contable }})
                                                             </option>
@@ -154,71 +155,71 @@
     </div>
 </div>
 
+<!-- jQuery y Select2 -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 <script>
-    let filaIndex = 1;
-    
-    // Convertimos TODA la colección de centros de costos a JSON
-    // para poder replicar el agrupamiento en JS
-    const centrosCostos = @json($centrosCostos);
-
-    function agregarFila() {
-        const tbody = document.getElementById('itemsTable');
-        
-        // --- CONSTRUCCIÓN DEL SELECT EN JS ---
-        let options = '<option value="">Seleccione bodega destino...</option>';
-        
-        // 1. Agrupar por departamento (recreamos groupBy de Laravel en JS)
-        const grupos = {};
-        centrosCostos.forEach(area => {
-            const depto = area.departamento || 'SIN DEPARTAMENTO';
-            if (!grupos[depto]) {
-                grupos[depto] = [];
-            }
-            grupos[depto].push(area);
+    function initCentroCostoSelect(element) {
+        $(element).select2({
+            width: '100%',
+            placeholder: 'Buscar centro de costo...',
+            allowClear: true
         });
-
-        // 2. Generar HTML con <optgroup>
-        for (const [depto, areas] of Object.entries(grupos)) {
-            options += `<optgroup label="${depto}">`;
-            
-            areas.forEach(area => {
-                // Formato idéntico al Blade: CC-SC | NOMBRE (CUENTA)
-                const texto = `${area.cc}-${area.sc} | ${area.nombre_area} (${area.cuenta_contable})`;
-                // Value guarda solo el nombre (según tu lógica actual de BD)
-                options += `<option value="${area.nombre_area}">${texto}</option>`;
-            });
-            
-            options += `</optgroup>`;
-        }
-        // -------------------------------------
-
-        const fila = `
-            <tr>
-                <td class="border border-gray-300 px-4 py-2">
-                    <input type="text" name="items[${filaIndex}][codigo]" class="w-full px-2 py-1 border rounded">
-                </td>
-                <td class="border border-gray-300 px-4 py-2">
-                    <input type="text" name="items[${filaIndex}][descripcion]" class="w-full px-2 py-1 border rounded">
-                </td>
-                <td class="border border-gray-300 px-4 py-2">
-                    <input type="number" name="items[${filaIndex}][cantidad]" class="w-full px-2 py-1 border rounded">
-                </td>
-                <td class="border border-gray-300 px-4 py-2">
-                    <select name="items[${filaIndex}][bodega]" required class="w-full px-2 py-1 border rounded">
-                        ${options}
-                    </select>
-                </td>
-                <td class="border border-gray-300 px-4 py-2 text-center">
-                    <button type="button" onclick="eliminarFila(this)" class="text-red-600 hover:text-red-800 font-bold text-xl">
-                        ✕
-                    </button>
-                </td>
-            </tr>
-        `;
-        tbody.insertAdjacentHTML('beforeend', fila);
-        filaIndex++;
     }
 
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.centro-costo-select').forEach(function (el) {
+            initCentroCostoSelect(el);
+        });
+    });
+
+    let filaIndex = 1;
+    
+    function agregarFila() {
+        const tbody = document.getElementById('itemsTable');
+        const fila = document.createElement('tr');
+        fila.innerHTML = `
+            <td class="border border-gray-300 px-4 py-2">
+                <input type="text" name="items[${filaIndex}][codigo]" class="w-full px-2 py-1 border rounded">
+            </td>
+            <td class="border border-gray-300 px-4 py-2">
+                <input type="text" name="items[${filaIndex}][descripcion]" class="w-full px-2 py-1 border rounded">
+            </td>
+            <td class="border border-gray-300 px-4 py-2">
+                <input type="number" name="items[${filaIndex}][cantidad]" class="w-full px-2 py-1 border rounded">
+            </td>
+            <td class="border border-gray-300 px-4 py-2">
+                <select name="items[${filaIndex}][bodega]" required 
+                        class="w-full px-2 py-1 border rounded centro-costo-select">
+                    <option value="">Seleccione bodega destino...</option>
+                    @foreach($centrosCostos->groupBy('departamento') as $depto => $areas)
+                        <optgroup label="{{ $depto }}">
+                            @foreach($areas as $area)
+                                <option value="{{ $area->nombre_area }}">
+                                    {{ $area->cc }}-{{ $area->sc }} | {{ $area->nombre_area }} ({{ $area->cuenta_contable }})
+                                </option>
+                            @endforeach
+                        </optgroup>
+                    @endforeach
+                </select>
+            </td>
+            <td class="border border-gray-300 px-4 py-2 text-center">
+                <button type="button" onclick="eliminarFila(this)" class="text-red-600 hover:text-red-800 font-bold text-xl">
+                    ✕
+                </button>
+            </td>
+        `;
+        tbody.appendChild(fila);
+        filaIndex++;
+
+        const nuevoSelect = fila.querySelector('.centro-costo-select');
+        if (nuevoSelect) {
+            initCentroCostoSelect(nuevoSelect);
+        }
+    }
+    
     function eliminarFila(boton) {
         const fila = boton.closest('tr');
         const tbody = document.getElementById('itemsTable');

@@ -48,12 +48,13 @@
                         @enderror
                     </div>
 
-                    <!-- Centro de Costos -->
+                    <!-- Centro de Costos (con búsqueda) -->
                     <div class="mb-6">
                         <label for="centro_costos" class="block text-sm font-medium text-gray-700 mb-2">
                             Centro de Costos:
                         </label>
-                        <select name="centro_costos" id="centro_costos" required class="w-full px-4 py-2 border rounded-lg">
+                        <select name="centro_costos" id="centro_costos" required 
+                                class="w-full px-4 py-2 border rounded-lg centro-costo-select">
                             <option value="">Seleccione centro de costo y área...</option>
                             @foreach($centrosCostos->groupBy('departamento') as $depto => $areas)
                                 <optgroup label="{{ $depto }}">
@@ -143,7 +144,7 @@
                         @enderror
                     </div>
 
-                    <!-- Observaciones (campo descripcion requerido por validación) -->
+                    <!-- Observaciones -->
                     <div class="mb-6">
                         <label for="descripcion" class="block text-sm font-medium text-gray-700 mb-2">
                             Observaciones:
@@ -182,7 +183,21 @@
     </div>
 </div>
 
+<!-- jQuery y Select2 SOLO para centro de costo -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 <script>
+    // Inicializar Select2 solo en el select de centro de costos
+    document.addEventListener('DOMContentLoaded', function () {
+        $('.centro-costo-select').select2({
+            width: '100%',
+            placeholder: 'Buscar centro de costo...',
+            allowClear: true
+        });
+    });
+
     let filaIndex = 1;
     
     function agregarFila() {

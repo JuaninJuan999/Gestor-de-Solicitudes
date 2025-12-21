@@ -29,7 +29,7 @@
                 
                 <h2 class="text-2xl font-bold text-blue-600 mb-6">Registrar Solicitud de Compra Estándar</h2>
 
-                <!-- BLOQUE DE ERRORES (NUEVO) -->
+                <!-- BLOQUE DE ERRORES -->
                 @if ($errors->any())
                     <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
                         <strong class="font-bold">¡Por favor corrige los siguientes errores:</strong>
@@ -57,7 +57,7 @@
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                     </div>
 
-                    <!-- Nuevo Campo: Presupuestado (SI/NO) -->
+                    <!-- Presupuestado -->
                     <div class="mb-6">
                         <label for="presupuestado" class="block text-sm font-medium text-gray-700 mb-2">
                             ¿Es presupuestado?
@@ -74,7 +74,9 @@
                         <label for="centro_costos" class="block text-sm font-bold text-gray-700 mb-2">
                             Centro de Costo y Área (Solicitante)
                         </label>
-                        <select name="centro_costos" id="centro_costos" required class="w-full px-4 py-2 border rounded-lg">
+                        <select name="centro_costos" id="centro_costos" 
+                                required 
+                                class="w-full px-4 py-2 border rounded-lg centro-costo-select">
                             <option value="">Seleccione centro de costo y área...</option>
                             @foreach($centrosCostos->groupBy('departamento') as $depto => $areas)
                                 <optgroup label="{{ $depto }}">
@@ -120,7 +122,19 @@
                                             <input type="number" name="items[0][cantidad]" class="w-full px-2 py-1 border rounded">
                                         </td>
                                         <td class="border border-gray-300 px-4 py-2">
-                                            <input type="text" name="items[0][centro_costos_item]" class="w-full px-2 py-1 border rounded">
+                                            <select name="items[0][centro_costos_item]" 
+                                                    class="w-full px-2 py-1 border rounded centro-costo-select">
+                                                <option value="">Seleccione centro de costo...</option>
+                                                @foreach($centrosCostos->groupBy('departamento') as $depto => $areas)
+                                                    <optgroup label="{{ $depto }}">
+                                                        @foreach($areas as $area)
+                                                            <option value="{{ "{$area->cc}-{$area->sc}" }}">
+                                                                {{ $area->cc }}-{{ $area->sc }} | {{ $area->nombre_area }} ({{ $area->cuenta_contable }})
+                                                            </option>
+                                                        @endforeach
+                                                    </optgroup>
+                                                @endforeach
+                                            </select>
                                         </td>
                                         <td class="border border-gray-300 px-4 py-2 text-center">
                                             <button type="button" onclick="eliminarFila(this)" class="text-red-600 hover:text-red-800 font-bold text-xl">
@@ -170,37 +184,74 @@
     </div>
 </div>
 
+<!-- jQuery y Select2 desde CDN -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 <script>
+    function initCentroCostoSelect(element) {
+        $(element).select2({
+            width: '100%',
+            placeholder: 'Buscar centro de costo...',
+            allowClear: true
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Inicializar todos los que ya están en la página al cargar
+        document.querySelectorAll('.centro-costo-select').forEach(function (el) {
+            initCentroCostoSelect(el);
+        });
+    });
+
     let filaIndex = 1;
     
     function agregarFila() {
         const tbody = document.getElementById('itemsTable');
-        const fila = `
-            <tr>
-                <td class="border border-gray-300 px-4 py-2">
-                    <input type="text" name="items[${filaIndex}][codigo]" class="w-full px-2 py-1 border rounded">
-                </td>
-                <td class="border border-gray-300 px-4 py-2">
-                    <input type="text" name="items[${filaIndex}][unidad]" class="w-full px-2 py-1 border rounded">
-                </td>
-                <td class="border border-gray-300 px-4 py-2">
-                    <input type="text" name="items[${filaIndex}][descripcion]" class="w-full px-2 py-1 border rounded">
-                </td>
-                <td class="border border-gray-300 px-4 py-2">
-                    <input type="number" name="items[${filaIndex}][cantidad]" class="w-full px-2 py-1 border rounded">
-                </td>
-                <td class="border border-gray-300 px-4 py-2">
-                    <input type="text" name="items[${filaIndex}][centro_costos_item]" class="w-full px-2 py-1 border rounded">
-                </td>
-                <td class="border border-gray-300 px-4 py-2 text-center">
-                    <button type="button" onclick="eliminarFila(this)" class="text-red-600 hover:text-red-800 font-bold text-xl">
-                        ✕
-                    </button>
-                </td>
-            </tr>
+        const fila = document.createElement('tr');
+        fila.innerHTML = `
+            <td class="border border-gray-300 px-4 py-2">
+                <input type="text" name="items[${filaIndex}][codigo]" class="w-full px-2 py-1 border rounded">
+            </td>
+            <td class="border border-gray-300 px-4 py-2">
+                <input type="text" name="items[${filaIndex}][unidad]" class="w-full px-2 py-1 border rounded">
+            </td>
+            <td class="border border-gray-300 px-4 py-2">
+                <input type="text" name="items[${filaIndex}][descripcion]" class="w-full px-2 py-1 border rounded">
+            </td>
+            <td class="border border-gray-300 px-4 py-2">
+                <input type="number" name="items[${filaIndex}][cantidad]" class="w-full px-2 py-1 border rounded">
+            </td>
+            <td class="border border-gray-300 px-4 py-2">
+                <select name="items[${filaIndex}][centro_costos_item]" 
+                        class="w-full px-2 py-1 border rounded centro-costo-select">
+                    <option value="">Seleccione centro de costo...</option>
+                    @foreach($centrosCostos->groupBy('departamento') as $depto => $areas)
+                        <optgroup label="{{ $depto }}">
+                            @foreach($areas as $area)
+                                <option value="{{ "{$area->cc}-{$area->sc}" }}">
+                                    {{ $area->cc }}-{{ $area->sc }} | {{ $area->nombre_area }} ({{ $area->cuenta_contable }})
+                                </option>
+                            @endforeach
+                        </optgroup>
+                    @endforeach
+                </select>
+            </td>
+            <td class="border border-gray-300 px-4 py-2 text-center">
+                <button type="button" onclick="eliminarFila(this)" class="text-red-600 hover:text-red-800 font-bold text-xl">
+                    ✕
+                </button>
+            </td>
         `;
-        tbody.insertAdjacentHTML('beforeend', fila);
+        tbody.appendChild(fila);
         filaIndex++;
+
+        // Inicializar SOLO el nuevo select de esta fila
+        const nuevoSelect = fila.querySelector('.centro-costo-select');
+        if (nuevoSelect) {
+            initCentroCostoSelect(nuevoSelect);
+        }
     }
     
     function eliminarFila(boton) {
@@ -213,5 +264,3 @@
         }
     }
 </script>
-@endsection
-
