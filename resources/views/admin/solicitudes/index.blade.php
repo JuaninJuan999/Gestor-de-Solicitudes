@@ -79,12 +79,13 @@
             <form method="GET" action="{{ route('admin.solicitudes.index') }}" class="space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
                     
-                    {{-- Estado --}}
+                    {{-- Estado (Combinación de todos los posibles estados) --}}
                     <div>
                         <label for="estado" class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Estado</label>
                         <select name="estado" id="estado" class="w-full px-3 py-2 bg-white/80 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm transition">
                             <option value="">Todos</option>
-                            <option value="pendiente" {{ request('estado') == 'pendiente' ? 'selected' : '' }}>⏳ Pendiente</option>
+                            <option value="pendiente" {{ request('estado') == 'pendiente' ? 'selected' : '' }}>⏳ Pendiente / Pendiente Aprobación</option>
+                            <option value="aprobado_supervisor" {{ request('estado') == 'aprobado_supervisor' ? 'selected' : '' }}>🔔 Solicitud Aprobada</option>
                             <option value="en_proceso" {{ request('estado') == 'en_proceso' ? 'selected' : '' }}>🔄 En Proceso</option>
                             <option value="finalizada" {{ request('estado') == 'finalizada' ? 'selected' : '' }}>✅ Finalizada</option>
                             <option value="rechazada" {{ request('estado') == 'rechazada' ? 'selected' : '' }}>❌ Rechazada</option>
@@ -193,25 +194,91 @@
                                         </span>
                                     </td>
 
-                                    {{-- Estado --}}
+                                    {{-- Estado (LOGICA DOBLE: CON/SIN SUPERVISOR) --}}
                                     <td class="px-6 py-4 whitespace-nowrap text-center">
-                                        @php
-                                            $estadoClass = match($solicitud->estado) {
-                                                'finalizada' => 'bg-green-100 text-green-800 border border-green-200',
-                                                'en_proceso' => 'bg-blue-100 text-blue-800 border border-blue-200',
-                                                'rechazada' => 'bg-red-100 text-red-800 border border-red-200',
-                                                default => 'bg-yellow-100 text-yellow-800 border border-yellow-200',
-                                            };
-                                            $estadoIcon = match($solicitud->estado) {
-                                                'finalizada' => '✓',
-                                                'rechazada' => '✕',
-                                                'en_proceso' => '↻',
-                                                default => '⏳',
-                                            };
-                                        @endphp
-                                        <span class="px-3 py-1 inline-flex items-center gap-1 text-xs leading-5 font-bold rounded-full {{ $estadoClass }}">
-                                            <span>{{ $estadoIcon }}</span> {{ ucfirst(str_replace('_', ' ', $solicitud->estado)) }}
-                                        </span>
+                                        
+                                        @if($solicitud->supervisor_id)
+                                            {{-- === CASO 1: TIENE SUPERVISOR === --}}
+                                            @switch($solicitud->estado)
+                                                @case('pendiente')
+                                                    <div class="flex flex-col items-center">
+                                                        <span class="px-3 py-1 inline-flex items-center gap-1 text-xs leading-5 font-bold rounded-full bg-yellow-100 text-yellow-800 border border-yellow-200">
+                                                            <span>⏳</span> Pendiente Aprobación
+                                                        </span>
+                                                        <span class="text-[10px] text-gray-500 mt-1 font-semibold">
+                                                            (Supervisor: {{ $solicitud->supervisor->name ?? 'N/A' }})
+                                                        </span>
+                                                    </div>
+                                                    @break
+
+                                                @case('aprobado_supervisor')
+                                                    <div class="flex flex-col items-center">
+                                                        <span class="px-3 py-1 inline-flex items-center gap-1 text-xs leading-5 font-bold rounded-full bg-blue-100 text-blue-800 border border-blue-200 shadow-sm ring-1 ring-blue-300">
+                                                            <span>🔔</span> Solicitud Aprobada
+                                                        </span>
+                                                        <span class="text-[10px] text-blue-600 mt-1 font-bold">
+                                                            (Por Supervisor)
+                                                        </span>
+                                                    </div>
+                                                    @break
+
+                                                @case('rechazada')
+                                                    <span class="px-3 py-1 inline-flex items-center gap-1 text-xs leading-5 font-bold rounded-full bg-red-100 text-red-800 border border-red-200">
+                                                        <span>✕</span> Solicitud Rechazada
+                                                    </span>
+                                                    @break
+                                                
+                                                @case('en_proceso')
+                                                    <span class="px-3 py-1 inline-flex items-center gap-1 text-xs leading-5 font-bold rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200">
+                                                        <span>↻</span> En Proceso
+                                                    </span>
+                                                    @break
+                                                
+                                                @case('finalizada')
+                                                    <span class="px-3 py-1 inline-flex items-center gap-1 text-xs leading-5 font-bold rounded-full bg-green-100 text-green-800 border border-green-200">
+                                                        <span>✓</span> Finalizada
+                                                    </span>
+                                                    @break
+
+                                                @default
+                                                    <span class="px-3 py-1 inline-flex items-center gap-1 text-xs leading-5 font-bold rounded-full bg-gray-100 text-gray-800 border border-gray-200">
+                                                        {{ ucfirst(str_replace('_', ' ', $solicitud->estado)) }}
+                                                    </span>
+                                            @endswitch
+
+                                        @else
+                                            {{-- === CASO 2: NO TIENE SUPERVISOR (DIRECTA) === --}}
+                                            @switch($solicitud->estado)
+                                                @case('pendiente')
+                                                    <span class="px-3 py-1 inline-flex items-center gap-1 text-xs leading-5 font-bold rounded-full bg-yellow-50 text-yellow-700 border border-yellow-200">
+                                                        <span>•</span> Pendiente
+                                                    </span>
+                                                    @break
+
+                                                @case('en_proceso')
+                                                    <span class="px-3 py-1 inline-flex items-center gap-1 text-xs leading-5 font-bold rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                                                        <span>↻</span> En Proceso
+                                                    </span>
+                                                    @break
+
+                                                @case('finalizada')
+                                                    <span class="px-3 py-1 inline-flex items-center gap-1 text-xs leading-5 font-bold rounded-full bg-green-100 text-green-800 border border-green-200">
+                                                        <span>✓</span> Finalizada
+                                                    </span>
+                                                    @break
+
+                                                @case('rechazada')
+                                                    <span class="px-3 py-1 inline-flex items-center gap-1 text-xs leading-5 font-bold rounded-full bg-red-100 text-red-800 border border-red-200">
+                                                        <span>✕</span> Rechazada
+                                                    </span>
+                                                    @break
+
+                                                @default
+                                                    <span class="px-3 py-1 inline-flex items-center gap-1 text-xs leading-5 font-bold rounded-full bg-gray-100 text-gray-800 border border-gray-200">
+                                                        {{ ucfirst(str_replace('_', ' ', $solicitud->estado)) }}
+                                                    </span>
+                                            @endswitch
+                                        @endif
                                     </td>
 
                                     {{-- Usuario y Área --}}

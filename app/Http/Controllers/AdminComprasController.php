@@ -63,13 +63,21 @@ class AdminComprasController extends Controller
     /**
      * Actualiza el estado de una solicitud
      */
+        /**
+     * Actualiza el estado de una solicitud
+     */
     public function actualizarEstado(Request $request, $id)
     {
+        // Agregamos 'aprobado_supervisor' a la lista de estados válidos
         $request->validate([
-            'estado' => 'required|in:pendiente,en_proceso,finalizada,rechazada',
+            'estado' => 'required|in:pendiente,aprobado_supervisor,en_proceso,finalizada,rechazada',
         ]);
 
         $solicitud = Solicitud::findOrFail($id);
+        
+        // Opcional: Si intentan pasar a 'en_proceso' algo que aún no aprueba el supervisor
+        // puedes bloquearlo aquí, pero como pediste ver todo, lo dejaremos flexible.
+        
         $solicitud->estado = $request->estado;
         $solicitud->save();
 
