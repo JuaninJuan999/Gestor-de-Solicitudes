@@ -65,13 +65,15 @@
                 </div>
             </div>
 
-            <!-- Tarjeta 3: Admin / Soporte -->
-            @if(auth()->check() && auth()->user()->is_admin)
+            <!-- Tarjeta 3: Lógica de Roles (Admin / Supervisor / Soporte) -->
+            
+            {{-- CASO 1: ADMINISTRADOR --}}
+            @if(auth()->user()->role === 'admin' || auth()->user()->is_admin)
                 <div class="bg-white bg-opacity-70 p-6 rounded-lg shadow-xl hover:shadow-2xl transition transform hover:scale-105" 
                      style="backdrop-filter: blur(10px);">
                     <div class="text-5xl mb-4 text-center">👨‍💼</div>
                     <h4 class="text-xl font-bold text-gray-900 mb-3 text-center">
-                        Panel Admin
+                        Centro de Control
                     </h4>
                     <p class="text-sm text-gray-700 mb-4 text-center">
                         Gestiona todas las solicitudes del sistema
@@ -83,6 +85,27 @@
                         </a>
                     </div>
                 </div>
+
+            {{-- CASO 2: SUPERVISOR (NUEVO) --}}
+            @elseif(auth()->user()->role === 'supervisor')
+                <div class="bg-white bg-opacity-70 p-6 rounded-lg shadow-xl hover:shadow-2xl transition transform hover:scale-105" 
+                     style="backdrop-filter: blur(10px);">
+                    <div class="text-5xl mb-4 text-center">✅</div>
+                    <h4 class="text-xl font-bold text-gray-900 mb-3 text-center">
+                        Aprobar Solicitudes
+                    </h4>
+                    <p class="text-sm text-gray-700 mb-4 text-center">
+                        Revisa y autoriza las solicitudes de tu equipo
+                    </p>
+                    <div class="text-center">
+                        <a href="{{ route('supervisor.index') }}" 
+                           class="inline-block px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition">
+                            Ir a aprobar →
+                        </a>
+                    </div>
+                </div>
+
+            {{-- CASO 3: USUARIO NORMAL (SOPORTE) --}}
             @else
                 <div class="bg-white bg-opacity-70 p-6 rounded-lg shadow-xl hover:shadow-2xl transition transform hover:scale-105" 
                      style="backdrop-filter: blur(10px);">
@@ -100,9 +123,10 @@
                     </div>
                 </div>
             @endif
+
         </div>
 
-        @if(auth()->check() && auth()->user()->is_admin)
+        @if(auth()->check() && (auth()->user()->role === 'admin' || auth()->user()->is_admin))
             <!-- Tarjeta 4: Reportes (solo admin) -->
             <div class="mt-8">
                 <div class="bg-white bg-opacity-70 p-6 rounded-lg shadow-xl hover:shadow-2xl transition transform hover:scale-105"
@@ -127,6 +151,5 @@
         @endif
 
     </div>
-
 </div>
 @endsection

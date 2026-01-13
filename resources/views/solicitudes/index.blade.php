@@ -1,20 +1,52 @@
-{{-- Vista: Listado de solicitudes del usuario autenticado --}}
 @extends('layouts.app')
 
 @section('content')
-<!-- Contenedor con fondo de imagen -->
-<div style="background-image: url('/images/create-solicitud.jpg'); 
-            background-size: cover; 
-            background-position: center; 
-            background-attachment: fixed; 
-            background-repeat: no-repeat;
-            min-height: calc(100vh - 80px);
-            padding-top: 3rem;
-            padding-bottom: 3rem;">
-    
+
+<!-- === FONDO FIJO === -->
+<div class="fixed-bg-image"></div>
+<div class="fixed-bg-overlay"></div>
+
+<style>
+    /* Fondo fijo */
+    .fixed-bg-image {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background-image: url('/images/create-solicitud.jpg');
+        background-size: cover; background-position: center; background-repeat: no-repeat;
+        z-index: -2;
+    }
+    .fixed-bg-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background-color: rgba(0, 0, 0, 0.3);
+        z-index: -1;
+    }
+
+    /* Botón Volver */
+    .btn-back-dashboard {
+        display: inline-flex; align-items: center; gap: 8px;
+        background-color: rgba(255, 255, 255, 0.8);
+        color: #2c3e50; padding: 10px 20px; border-radius: 8px;
+        font-weight: 600; border: 1px solid rgba(255,255,255,0.5);
+        backdrop-filter: blur(5px); transition: all 0.2s;
+        text-decoration: none;
+    }
+    .btn-back-dashboard:hover {
+        background-color: #fff; transform: translateY(-1px); color: #000;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+</style>
+
+<!-- === CONTENIDO PRINCIPAL === -->
+<div class="py-12">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
         
-        <!-- Tarjeta principal (70% transparente) -->
+        <!-- === BOTÓN VOLVER AL DASHBOARD === -->
+        <div class="mb-6">
+            <a href="{{ route('dashboard') }}" class="btn-back-dashboard shadow-sm">
+                <i class="bi bi-chevron-left"></i> Volver al Dashboard
+            </a>
+        </div>
+        
+        <!-- Tarjeta principal (Glassmorphism) -->
         <div class="bg-white bg-opacity-70 overflow-hidden shadow-2xl sm:rounded-lg"
              style="backdrop-filter: blur(10px);">
             <div class="p-6 border-b border-gray-200">
@@ -33,6 +65,7 @@
                     </div>
                 @endif
 
+                <!-- Filtros -->
                 <div class="mb-6 bg-white bg-opacity-80 border-2 border-green-500 rounded-lg p-5 shadow-md">
                     <form method="GET" action="{{ route('solicitudes.index') }}" class="flex flex-wrap gap-4 items-end">
                         <div class="flex-1 min-w-[250px]">
@@ -42,18 +75,10 @@
                             <select name="estado" id="estado" 
                                 class="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
                                 <option value="">📋 Todas mis solicitudes</option>
-                                <option value="pendiente" {{ request('estado') == 'pendiente' ? 'selected' : '' }}>
-                                    ⏳ Pendiente
-                                </option>
-                                <option value="en_proceso" {{ request('estado') == 'en_proceso' ? 'selected' : '' }}>
-                                    🔄 En Proceso
-                                </option>
-                                <option value="finalizada" {{ request('estado') == 'finalizada' ? 'selected' : '' }}>
-                                    ✅ Finalizada
-                                </option>
-                                <option value="rechazada" {{ request('estado') == 'rechazada' ? 'selected' : '' }}>
-                                    ❌ Rechazada
-                                </option>
+                                <option value="pendiente" {{ request('estado') == 'pendiente' ? 'selected' : '' }}>⏳ Pendiente</option>
+                                <option value="en_proceso" {{ request('estado') == 'en_proceso' ? 'selected' : '' }}>🔄 En Proceso</option>
+                                <option value="finalizada" {{ request('estado') == 'finalizada' ? 'selected' : '' }}>✅ Finalizada</option>
+                                <option value="rechazada" {{ request('estado') == 'rechazada' ? 'selected' : '' }}>❌ Rechazada</option>
                             </select>
                         </div>
                         <div class="flex gap-3">
@@ -108,25 +133,26 @@
                         @foreach($solicitudes as $solicitud)
                             <div class="bg-white bg-opacity-80 border-2 border-gray-200 rounded-lg p-6 hover:border-blue-400 transition shadow-md"
                                  style="backdrop-filter: blur(5px);">
+                                
                                 <!-- Encabezado de la solicitud -->
                                 <div class="flex justify-between items-start mb-4">
                                     <div>
                                         <div class="mb-2 flex flex-wrap gap-2">
-                                            <!-- Consecutivo del ticket -->
+                                            <!-- Consecutivo -->
                                             <span class="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm font-mono font-bold">
                                                 {{ $solicitud->consecutivo ?? 'TICKET-' . str_pad($solicitud->id, 4, '0', STR_PAD_LEFT) }}
                                             </span>
-                                            <!-- Área del usuario -->
+                                            <!-- Área -->
                                             @if($solicitud->user && $solicitud->user->area)
                                                 <span class="px-3 py-1 bg-purple-600 text-white rounded-lg text-sm font-semibold">
                                                     📍 {{ $solicitud->user->area }}
                                                 </span>
                                             @endif
-                                            <!-- Nombre del usuario -->
+                                            <!-- Usuario -->
                                             <span class="px-3 py-1 bg-green-600 text-white rounded-lg text-sm font-semibold">
                                                 👤 {{ $solicitud->user->name ?? 'Usuario' }}
                                             </span>
-                                            <!-- Etiqueta tipo de solicitud -->
+                                            <!-- Tipo -->
                                             @php
                                                 $etiquetaTipo = '';
                                                 $colorTipo = 'bg-gray-500';
@@ -148,7 +174,7 @@
                                                 {{ $etiquetaTipo }}
                                             </span>
 
-                                            <!-- Etiqueta Presupuestado (NUEVO) -->
+                                            <!-- Presupuestado -->
                                             @if($solicitud->presupuestado)
                                                 <span class="px-3 py-1 {{ $solicitud->presupuestado == 'SI' ? 'bg-indigo-600' : 'bg-red-500' }} text-white rounded-lg text-sm font-semibold">
                                                     Presupuestado: {{ $solicitud->presupuestado }}
@@ -162,30 +188,20 @@
                                     </div>
                                     <div>
                                         @if($solicitud->estado == 'pendiente')
-                                            <span class="px-4 py-2 bg-yellow-100 text-yellow-800 font-semibold rounded-full">
-                                                ⏳ Pendiente
-                                            </span>
+                                            <span class="px-4 py-2 bg-yellow-100 text-yellow-800 font-semibold rounded-full">⏳ Pendiente</span>
                                         @elseif($solicitud->estado == 'en_proceso')
-                                            <span class="px-4 py-2 bg-blue-100 text-blue-800 font-semibold rounded-full">
-                                                🔄 En Proceso
-                                            </span>
+                                            <span class="px-4 py-2 bg-blue-100 text-blue-800 font-semibold rounded-full">🔄 En Proceso</span>
                                         @elseif($solicitud->estado == 'finalizada')
-                                            <span class="px-4 py-2 bg-green-100 text-green-800 font-semibold rounded-full">
-                                                ✅ Finalizada
-                                            </span>
+                                            <span class="px-4 py-2 bg-green-100 text-green-800 font-semibold rounded-full">✅ Finalizada</span>
                                         @elseif($solicitud->estado == 'rechazada')
-                                            <span class="px-4 py-2 bg-red-100 text-red-800 font-semibold rounded-full">
-                                                ❌ Rechazada
-                                            </span>
+                                            <span class="px-4 py-2 bg-red-100 text-red-800 font-semibold rounded-full">❌ Rechazada</span>
                                         @else
-                                            <span class="px-4 py-2 bg-gray-100 text-gray-800 font-semibold rounded-full">
-                                                {{ ucfirst($solicitud->estado) }}
-                                            </span>
+                                            <span class="px-4 py-2 bg-gray-100 text-gray-800 font-semibold rounded-full">{{ ucfirst($solicitud->estado) }}</span>
                                         @endif
                                     </div>
                                 </div>
 
-                                <!-- Tabla de items solicitados por tipo -->
+                                <!-- Lógica de items -->
                                 @php
                                     $itemsTabla = $solicitud->items ?? collect();
                                     $itemsJson = [];
@@ -211,7 +227,7 @@
                                                     <thead class="bg-green-600 text-white">
                                                         <tr>
                                                             <th class="border border-gray-300 px-4 py-2 text-left">CÓDIGO SIIMED</th>
-                                                            <th class="border border-gray-300 px-4 py-2 text-center">UNIDAD DE MEDIDA</th>
+                                                            <th class="border border-gray-300 px-4 py-2 text-center">UNIDAD</th>
                                                             <th class="border border-gray-300 px-4 py-2 text-left">DESCRIPCIÓN</th>
                                                             <th class="border border-gray-300 px-4 py-2 text-center">CANTIDAD</th>
                                                             <th class="border border-gray-300 px-4 py-2 text-center">CENTRO DE COSTO</th>
@@ -276,7 +292,7 @@
                                                     </tbody>
                                                 </table>
 
-                                            <!-- SOLICITUD PEDIDOS -->
+                                            <!-- PEDIDOS -->
                                             @elseif($solicitud->tipo_solicitud == 'solicitud_pedidos')
                                                 <table class="min-w-full border-collapse border border-gray-300">
                                                     <thead class="bg-yellow-600 text-white">
@@ -284,8 +300,8 @@
                                                             <th class="border px-4 py-2">CÓDIGO</th>
                                                             <th class="border px-4 py-2">DESCRIPCIÓN</th>
                                                             <th class="border px-4 py-2">CANTIDAD</th>
-                                                            <th class="border px-4 py-2">ÁREA CONSUMO</th>
-                                                            <th class="border px-4 py-2">CENTRO DE COSTOS</th>
+                                                            <th class="border px-4 py-2">ÁREA</th>
+                                                            <th class="border px-4 py-2">C. COSTO</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody class="bg-white">
@@ -313,23 +329,23 @@
                                                     </tbody>
                                                 </table>
 
-                                            <!-- SOLICITUD MTTO (NUEVO) -->
+                                            <!-- MANTENIMIENTO -->
                                             @elseif($solicitud->tipo_solicitud == 'solicitud_mtto')
                                                 <table class="min-w-full border-collapse border border-gray-300">
                                                     <thead class="bg-purple-600 text-white">
                                                         <tr>
-                                                            <th class="border border-gray-300 px-4 py-2 text-left">DESCRIPCIÓN</th>
-                                                            <th class="border border-gray-300 px-4 py-2 text-left">ESPECIFICACIONES</th>
-                                                            <th class="border border-gray-300 px-4 py-2 text-center">CANTIDAD</th>
+                                                            <th class="border px-4 py-2">DESCRIPCIÓN</th>
+                                                            <th class="border px-4 py-2">ESPECIFICACIONES</th>
+                                                            <th class="border px-4 py-2">CANTIDAD</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody class="bg-white">
                                                         @if($itemsTabla->isNotEmpty())
                                                             @foreach($itemsTabla as $item)
                                                                 <tr class="hover:bg-gray-50">
-                                                                    <td class="border border-gray-300 px-4 py-2">{{ $item->descripcion ?? '-' }}</td>
-                                                                    <td class="border border-gray-300 px-4 py-2">{{ $item->especificaciones ?? '-' }}</td>
-                                                                    <td class="border border-gray-300 px-4 py-2 text-center">{{ $item->cantidad ?? '-' }}</td>
+                                                                    <td class="border px-4 py-2">{{ $item->descripcion ?? '-' }}</td>
+                                                                    <td class="border px-4 py-2">{{ $item->especificaciones ?? '-' }}</td>
+                                                                    <td class="border px-4 py-2">{{ $item->cantidad ?? '-' }}</td>
                                                                 </tr>
                                                             @endforeach
                                                         @endif
@@ -348,18 +364,17 @@
                                     </div>
                                 @endif
 
-                                <!-- Archivo adjunto -->
+                                <!-- Archivo -->
                                 @if($solicitud->archivo)
                                     <div class="mt-3">
-                                        <a href="{{ url('storage/' . $solicitud->archivo) }}" 
-                                           target="_blank"
+                                        <a href="{{ url('storage/' . $solicitud->archivo) }}" target="_blank"
                                            class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition">
                                             📎 Ver archivo adjunto
                                         </a>
                                     </div>
                                 @endif
 
-                                <!-- Botón Ver Detalle y Comentarios -->
+                                <!-- Botón Detalle -->
                                 <div class="mt-4 pt-4 border-t border-gray-200">
                                     <a href="{{ route('solicitudes.show', $solicitud) }}" 
                                        class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
@@ -379,4 +394,3 @@
     </div>
 </div>
 @endsection
-

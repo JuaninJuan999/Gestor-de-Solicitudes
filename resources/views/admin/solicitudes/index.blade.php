@@ -1,23 +1,59 @@
 @extends('layouts.app')
 
 @section('content')
-{{-- 
-    CONTENEDOR PRINCIPAL CON IMAGEN DE FONDO
-    Ajusta la URL de la imagen si es necesario.
---}}
-<div class="min-h-screen py-12" 
-     style="background-image: url('{{ asset('images/create-solicitud.jpg') }}'); background-size: cover; background-position: center; background-attachment: fixed;">
-    
+
+<!-- === FONDO FIJO === -->
+<div class="fixed-bg-image"></div>
+<div class="fixed-bg-overlay"></div>
+
+<style>
+    /* Fondo fijo */
+    .fixed-bg-image {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background-image: url('{{ asset('images/create-solicitud.jpg') }}');
+        background-size: cover; background-position: center; background-repeat: no-repeat;
+        z-index: -2;
+    }
+    .fixed-bg-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background-color: rgba(0, 0, 0, 0.4);
+        z-index: -1;
+    }
+
+    /* Botón Volver */
+    .btn-back-dashboard {
+        display: inline-flex; align-items: center; gap: 8px;
+        background-color: rgba(255, 255, 255, 0.8);
+        color: #2c3e50; padding: 10px 20px; border-radius: 8px;
+        font-weight: 600; border: 1px solid rgba(255,255,255,0.5);
+        backdrop-filter: blur(5px); transition: all 0.2s;
+        text-decoration: none;
+    }
+    .btn-back-dashboard:hover {
+        background-color: #fff; transform: translateY(-1px); color: #000;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+</style>
+
+<!-- === CONTENIDO PRINCIPAL === -->
+<div class="py-12">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
         
+        <!-- === BOTÓN VOLVER AL DASHBOARD === -->
+        <div class="mb-6">
+            <a href="{{ route('dashboard') }}" class="btn-back-dashboard shadow-sm">
+                <i class="bi bi-chevron-left"></i> Volver al Dashboard
+            </a>
+        </div>
+
         {{-- ENCABEZADO Y TOTALES --}}
         <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
             <h2 class="text-3xl font-bold text-white drop-shadow-md">
-                Panel de Administración <span class="text-purple-200">Solicitudes</span>
+                Centro de Control de <span class="text-purple-200">Solicitudes</span>
             </h2>
             <div class="flex items-center gap-3">
-                 <span class="px-4 py-2 bg-white/70 backdrop-blur-md border border-white/50 text-gray-800 rounded-lg shadow-sm font-semibold">
-                    Total Registros: <span class="text-purple-700 font-bold">{{ $solicitudes->total() }}</span>
+                <span class="px-4 py-2 bg-white/70 backdrop-blur-md border border-white/50 text-gray-800 rounded-lg shadow-sm font-semibold">
+                   Total Registros: <span class="text-purple-700 font-bold">{{ $solicitudes->total() }}</span>
                 </span>
             </div>
         </div>
@@ -33,10 +69,7 @@
             </div>
         @endif
 
-        {{-- 
-            SECCIÓN DE FILTROS 
-            Estilo: Fondo blanco al 70% (bg-white/70) + Blur (backdrop-blur-md)
-        --}}
+        {{-- SECCIÓN DE FILTROS --}}
         <div class="rounded-xl shadow-lg border border-white/40 p-6 mb-8 bg-white/70 backdrop-blur-md">
             <div class="mb-4 flex items-center gap-2 border-b border-gray-300/50 pb-2">
                 <svg class="w-5 h-5 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
@@ -105,10 +138,7 @@
             </form>
         </div>
 
-        {{-- 
-            TABLA DE RESULTADOS
-            Estilo: Fondo blanco al 70% (bg-white/70) + Blur (backdrop-blur-md)
-        --}}
+        {{-- TABLA DE RESULTADOS --}}
         <div class="overflow-hidden shadow-xl sm:rounded-xl border border-white/40 bg-white/70 backdrop-blur-md">
             @if($solicitudes->isEmpty())
                 <div class="text-center py-16">
@@ -120,7 +150,6 @@
                 </div>
             @else
                 <div class="overflow-x-auto">
-                    {{-- Nota: bg-transparent en la tabla para dejar ver el fondo de la tarjeta --}}
                     <table class="min-w-full divide-y divide-gray-200/60 bg-transparent">
                         <thead class="bg-gray-50/50">
                             <tr>
@@ -185,21 +214,21 @@
                                         </span>
                                     </td>
 
-{{-- Usuario y Área (Estilo Etiqueta) --}}
-<td class="px-6 py-4 whitespace-nowrap text-center">
-    <div class="inline-flex flex-col items-center justify-center px-4 py-1.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 shadow-sm">
-        <span class="text-xs font-bold">{{ strtoupper($solicitud->user->name ?? 'USUARIO') }}</span>
-        <span class="text-[10px] text-slate-500 font-semibold tracking-wider">{{ $solicitud->user->area ?? 'SIN ÁREA' }}</span>
-    </div>
-</td>
+                                    {{-- Usuario y Área --}}
+                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                        <div class="inline-flex flex-col items-center justify-center px-4 py-1.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 shadow-sm">
+                                            <span class="text-xs font-bold">{{ strtoupper($solicitud->user->name ?? 'USUARIO') }}</span>
+                                            <span class="text-[10px] text-slate-500 font-semibold tracking-wider">{{ $solicitud->user->area ?? 'SIN ÁREA' }}</span>
+                                        </div>
+                                    </td>
 
-                                    {{-- Fecha (Estilo Etiqueta) --}}
-<td class="px-6 py-4 whitespace-nowrap text-center">
-    <div class="inline-flex flex-col items-center justify-center px-4 py-1.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm">
-        <span class="text-xs font-bold">{{ $solicitud->created_at->format('d/m/Y') }}</span>
-        <span class="text-[10px] opacity-80 font-medium">{{ $solicitud->created_at->format('h:i a') }}</span>
-    </div>
-</td>
+                                    {{-- Fecha --}}
+                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                        <div class="inline-flex flex-col items-center justify-center px-4 py-1.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm">
+                                            <span class="text-xs font-bold">{{ $solicitud->created_at->format('d/m/Y') }}</span>
+                                            <span class="text-[10px] opacity-80 font-medium">{{ $solicitud->created_at->format('h:i a') }}</span>
+                                        </div>
+                                    </td>
 
                                     {{-- Acciones --}}
                                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">

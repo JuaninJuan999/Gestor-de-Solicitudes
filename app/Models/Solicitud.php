@@ -11,8 +11,9 @@ class Solicitud extends Model
 
     protected $table = 'solicitudes';
 
-      protected $fillable = [
+    protected $fillable = [
         'user_id',
+        'supervisor_id',    // <--- NUEVO CAMPO AGREGADO
         'consecutivo',
         'titulo',
         'descripcion',
@@ -22,22 +23,30 @@ class Solicitud extends Model
         'presupuestado', 
         'archivo',
         'estado',
-        'justificacion',    // <--- AGREGADO
-        'funcion_formato',  // <--- AGREGADO
+        'justificacion',    
+        'funcion_formato',  
     ];
-
 
     protected $casts = [
         'estado' => 'string',
     ];
 
     /**
-     * Relación con el modelo User
+     * Relación con el modelo User (Creador)
      * Una solicitud pertenece a un usuario
      */
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Relación con el modelo User (Supervisor) - NUEVA
+     * Una solicitud puede tener un supervisor asignado
+     */
+    public function supervisor()
+    {
+        return $this->belongsTo(User::class, 'supervisor_id');
     }
 
     /**
@@ -73,8 +82,10 @@ class Solicitud extends Model
     {
         return match ($this->estado) {
             'pendiente' => '#ffc107',
+            'aprobado_supervisor' => '#17a2b8', // Color azulito para supervisor
             'en_proceso' => '#17a2b8',
             'finalizada' => '#28a745',
+            'rechazada' => '#dc3545',
             default => '#6c757d',
         };
     }

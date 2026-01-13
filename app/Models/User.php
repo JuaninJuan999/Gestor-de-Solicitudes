@@ -22,8 +22,10 @@ class User extends Authenticatable
         'email',
         'password',
         'area',
-        'rol',
-        'is_admin', // nuevo: para marcar si es administrador de compras
+        'role',      // Usamos 'role' (admin, supervisor, user)
+        'rol',       // Mantenemos 'rol' por compatibilidad
+        'is_active', // Estado activo/inactivo
+        'is_admin',  // Mantenemos por compatibilidad
     ];
 
     /**
@@ -46,22 +48,37 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'is_admin' => 'boolean', // casteo a boolean
+            'is_admin' => 'boolean',
+            'is_active' => 'boolean',
         ];
     }
 
     /**
-     * Verifica si el usuario es administrador de compras
-     * Mantiene compatibilidad con código antiguo basado en "rol",
-     * pero ahora prioriza la columna is_admin.
+     * Verifica si el usuario es administrador
      */
     public function esAdminCompras(): bool
     {
-        if (! is_null($this->is_admin)) {
-            return (bool) $this->is_admin;
+        // 1. Prioridad: Nueva columna 'role'
+        if ($this->role === 'admin') {
+            return true;
         }
 
+        // 2. Compatibilidad: Columna 'is_admin'
+        if (! is_null($this->is_admin) && $this->is_admin) {
+            return true;
+        }
+
+        // 3. Compatibilidad: Columna antigua 'rol'
         return $this->rol === 'admin_compras';
+    }
+
+    /**
+     * Verifica si el usuario es Supervisor
+     * (IMPORTANTE: Esto es nuevo para tu lógica)
+     */
+    public function esSupervisor(): bool
+    {
+        return $this->role === 'supervisor';
     }
 
     /**
@@ -69,11 +86,7 @@ class User extends Authenticatable
      */
     public function esUsuario(): bool
     {
-        if (! is_null($this->is_admin)) {
-            return ! (bool) $this->is_admin;
-        }
-
-        return $this->rol === 'usuario';
+        return !$this->esAdminCompras() && !$this->esSupervisor();
     }
 
     /**

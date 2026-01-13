@@ -40,10 +40,14 @@ class SolicitudController extends Controller
      * Muestra el formulario para crear una nueva solicitud.
      * Maneja diferentes tipos de solicitud y carga centros de costos.
      */
-    public function create(Request $request)
+        public function create(Request $request)
     {
         $tipo = $request->query('tipo');
         $centrosCostos = CentroCosto::orderBy('departamento')->get();
+
+        // === NUEVO: Obtener lista de supervisores ===
+        // Buscamos usuarios cuyo 'role' sea 'supervisor'
+        $supervisores = User::where('role', 'supervisor')->where('is_active', true)->get();
 
         // Si no hay tipo seleccionado, mostrar la pantalla de selección
         if (!$tipo) {
@@ -51,31 +55,25 @@ class SolicitudController extends Controller
         }
 
         if ($tipo === 'estandar') {
-            return view('solicitudes.create', compact('centrosCostos'));
+            // Pasamos $supervisores a la vista
+            return view('solicitudes.create', compact('centrosCostos', 'supervisores'));
 
         } elseif ($tipo === 'traslado_bodegas') {
-            // CORRECCIÓN: Enviamos objetos completos para poder usar 'cc' en la vista
             $areasBodega = $centrosCostos->unique('nombre_area')->sortBy('nombre_area');
-            return view('solicitudes.create-traslado-bodegas', compact('centrosCostos', 'areasBodega'));
+            return view('solicitudes.create-traslado-bodegas', compact('centrosCostos', 'areasBodega', 'supervisores'));
 
         } elseif ($tipo === 'solicitud_pedidos') {
-            // CORRECCIÓN: Igual aquí para consistencia
             $areasBodega = $centrosCostos->unique('nombre_area')->sortBy('nombre_area');
-            return view('solicitudes.create-solicitud-pedidos', compact('centrosCostos', 'areasBodega'));
+            return view('solicitudes.create-solicitud-pedidos', compact('centrosCostos', 'areasBodega', 'supervisores'));
 
-        } elseif ($tipo === 'solicitud_mtto') {   // ← NUEVO TIPO
-            return view('solicitudes.create-solicitud-mtto', compact('centrosCostos'));
+        } elseif ($tipo === 'solicitud_mtto') {
+            return view('solicitudes.create-solicitud-mtto', compact('centrosCostos', 'supervisores'));
         }
 
         return redirect()->route('solicitudes.create');
     }
 
-    /**
-     * Guarda una nueva solicitud en la base de datos.
-     * Maneja diferentes tipos de solicitud.
-     * Envía correo a los admins notificando la nueva solicitud.
-     */
-    public function store(Request $request)
+        public function store(Request $request)
     {
         // 1. Validaciones
         $request->validate([
@@ -83,13 +81,15 @@ class SolicitudController extends Controller
             'tipo_solicitud'  => 'required|string|in:estandar,traslado_bodegas,solicitud_pedidos,solicitud_mtto',
             'area_solicitante'=> 'nullable|string|max:255',
             'centro_costos'   => 'nullable|string|max:255',
-            'presupuestado'   => 'nullable|string', // Validamos el nuevo campo (solo estandar)
+            'presupuestado'   => 'nullable|string',
             'descripcion'     => 'required|string',
-            // VALIDACIÓN ARCHIVO CORREGIDA: Agregado xlsx, xls
             'archivo'         => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png,xlsx,xls|max:5000',
             'items'           => 'required|array|min:1',
+            
+            // Validación Supervisor
+            'supervisor_id'   => 'nullable|exists:users,id', 
 
-            // Solo obligatorio para el nuevo tipo mtto
+            // Validaciones Mtto
             'funcion_formato' => 'required_if:tipo_solicitud,solicitud_mtto|in:insumos_activos,servicios_presupuestados',
             'justificacion'   => 'required_if:tipo_solicitud,solicitud_mtto|string|max:1000',
         ]);
@@ -103,6 +103,11 @@ class SolicitudController extends Controller
         $numeroConsecutivo = $ultimaSolicitud ? ($ultimaSolicitud->id + 1) : 1;
         $consecutivo       = 'TICKET-' . str_pad($numeroConsecutivo, 4, '0', STR_PAD_LEFT);
 
+        // === DETERMINAR ESTADO INICIAL ===
+        // Si hay supervisor asignado, queda 'pendiente' (de aprobación).
+        // Si NO hay supervisor, pasa directo a 'aprobado_supervisor' (o pendiente de compras).
+        $estadoInicial = $request->supervisor_id ? 'pendiente' : 'aprobado_supervisor';
+
         // 2. Crear Encabezado de Solicitud
         $solicitud = Solicitud::create([
             'user_id'         => auth()->id(),
@@ -111,22 +116,20 @@ class SolicitudController extends Controller
             'tipo_solicitud'  => $request->tipo_solicitud,
             'area_solicitante'=> $request->area_solicitante,
             'centro_costos'   => $request->centro_costos,
-            // Guardamos presupuestado SOLO si viene en el request (estandar)
-            'presupuestado'   => $request->presupuestado ?? null, 
+            'presupuestado'   => $request->presupuestado ?? null,
             'descripcion'     => $request->descripcion,
             'archivo'         => $archivoPath,
-            'estado'          => 'pendiente',
+            'estado'          => $estadoInicial, // Usamos la variable lógica
+            'supervisor_id'   => $request->supervisor_id, // Guardamos al supervisor
 
-            // Nuevos campos mtto
+            // Campos mtto
             'funcion_formato' => $request->tipo_solicitud === 'solicitud_mtto' ? $request->funcion_formato : null,
             'justificacion'   => $request->tipo_solicitud === 'solicitud_mtto' ? $request->justificacion : null,
         ]);
 
-        // 3. Guardar Ítems según el tipo
+        // 3. Guardar Ítems (Lógica Original Intacta)
         foreach ($request->items as $item) {
-            
             if ($request->tipo_solicitud === 'estandar') {
-                // LÓGICA MODIFICADA SOLO PARA ESTÁNDAR
                 $solicitud->items()->create([
                     'codigo'             => $item['codigo'] ?? null,
                     'unidad'             => $item['unidad'] ?? null,
@@ -134,18 +137,14 @@ class SolicitudController extends Controller
                     'cantidad'           => $item['cantidad'] ?? null,
                     'centro_costos_item' => $item['centro_costos_item'] ?? null,
                 ]);
-
             } elseif ($request->tipo_solicitud === 'traslado_bodegas') {
-                // LÓGICA ORIGINAL
                 $solicitud->items()->create([
                     'codigo'      => $item['codigo'] ?? null,
                     'descripcion' => $item['descripcion'] ?? null,
                     'cantidad'    => $item['cantidad'] ?? null,
                     'bodega'      => $item['bodega'] ?? null,
                 ]);
-
             } elseif ($request->tipo_solicitud === 'solicitud_pedidos') {
-                // LÓGICA ORIGINAL
                 $solicitud->items()->create([
                     'codigo'             => $item['codigo'] ?? null,
                     'descripcion'        => $item['descripcion'] ?? null,
@@ -153,9 +152,7 @@ class SolicitudController extends Controller
                     'area_consumo'       => $item['area_consumo'] ?? null,
                     'centro_costos_item' => $item['centro_costos_item'] ?? null,
                 ]);
-
             } elseif ($request->tipo_solicitud === 'solicitud_mtto') {
-                // LÓGICA ORIGINAL
                 $solicitud->items()->create([
                     'descripcion'      => $item['descripcion'] ?? null,
                     'especificaciones' => $item['especificaciones'] ?? null,
@@ -164,11 +161,12 @@ class SolicitudController extends Controller
             }
         }
 
-        // Correo a admins
+        // Correo a Admins (Opcional: Podrías notificar al Supervisor aquí también)
         try {
             $admins = User::where('is_admin', true)->get();
             foreach ($admins as $admin) {
                 if ($admin->email) {
+                    // Solo notificar a admins si NO requiere supervisor o si quieres que sepan igual
                     Mail::to($admin->email)->send(new NuevaSolicitudAdminMail($solicitud));
                 }
             }
@@ -180,6 +178,7 @@ class SolicitudController extends Controller
             ->route('solicitudes.index')
             ->with('success', 'Solicitud registrada correctamente con consecutivo: ' . $consecutivo);
     }
+
 
     /**
      * Muestra los detalles de una solicitud específica con comentarios.

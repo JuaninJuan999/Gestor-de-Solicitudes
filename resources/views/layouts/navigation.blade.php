@@ -15,6 +15,14 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
+
+                    <!-- === NUEVO: ENLACE A USUARIOS (Solo Admin) === -->
+                    @if(auth()->user()->role === 'admin' || auth()->user()->is_admin)
+                        <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
+                            {{ __('Gestión Usuarios') }}
+                        </x-nav-link>
+                    @endif
+                    <!-- ============================================== -->
                 </div>
             </div>
 
@@ -34,7 +42,7 @@
                     </x-slot>
 
                     <x-slot name="content">
-                        <!-- Enlace a Editar Perfil (Actualizado) -->
+                        <!-- Enlace a Editar Perfil -->
                         <x-dropdown-link :href="route('perfil.edit')">
                             {{ __('Mi Perfil') }}
                         </x-dropdown-link>
@@ -42,7 +50,6 @@
                         <!-- Authentication -->
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
-
                             <x-dropdown-link :href="route('logout')"
                                     onclick="event.preventDefault();
                                                 this.closest('form').submit();">
@@ -71,6 +78,14 @@
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
+
+            <!-- === NUEVO: ENLACE MÓVIL (Solo Admin) === -->
+            @if(auth()->user()->role === 'admin' || auth()->user()->is_admin)
+                <x-responsive-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
+                    {{ __('Gestión Usuarios') }}
+                </x-responsive-nav-link>
+            @endif
+            <!-- ======================================== -->
         </div>
 
         <!-- Responsive Settings Options -->
@@ -81,7 +96,6 @@
             </div>
 
             <div class="mt-3 space-y-1">
-                <!-- Enlace a Editar Perfil (Móvil - Actualizado) -->
                 <x-responsive-nav-link :href="route('perfil.edit')">
                     {{ __('Mi Perfil') }}
                 </x-responsive-nav-link>
@@ -89,7 +103,6 @@
                 <!-- Authentication -->
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-
                     <x-responsive-nav-link :href="route('logout')"
                             onclick="event.preventDefault();
                                         this.closest('form').submit();">
