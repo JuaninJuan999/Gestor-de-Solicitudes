@@ -40,7 +40,7 @@ class SolicitudController extends Controller
      * Muestra el formulario para crear una nueva solicitud.
      * Maneja diferentes tipos de solicitud y carga centros de costos.
      */
-        public function create(Request $request)
+    public function create(Request $request)
     {
         $tipo = $request->query('tipo');
         $centrosCostos = CentroCosto::orderBy('departamento')->get();
@@ -73,7 +73,7 @@ class SolicitudController extends Controller
         return redirect()->route('solicitudes.create');
     }
 
-        public function store(Request $request)
+    public function store(Request $request)
     {
         // 1. Validaciones
         $request->validate([
@@ -179,7 +179,6 @@ class SolicitudController extends Controller
             ->with('success', 'Solicitud registrada correctamente con consecutivo: ' . $consecutivo);
     }
 
-
     /**
      * Muestra los detalles de una solicitud específica con comentarios.
      */
@@ -191,11 +190,21 @@ class SolicitudController extends Controller
 
         $solicitud->load(['user', 'items', 'comentarios.user']);
 
-        return view('solicitudes.show', compact('solicitud'));
+        // === NUEVO: Cargar mapa de Centros de Costos ===
+        // Creamos un array donde la clave es "cc-sc" (ej: "309-3") y el valor es el nombre
+        $centrosMap = CentroCosto::all()->mapWithKeys(function ($centro) {
+            // Aseguramos que el formato coincida con lo que guardaste (ej: 309-3)
+            $codigo = $centro->cc . '-' . $centro->sc;
+            return [$codigo => $centro->nombre_area];
+        });
+
+        // Pasamos $centrosMap a la vista
+        return view('solicitudes.show', compact('solicitud', 'centrosMap'));
     }
 
     /**
      * Exporta una sola solicitud a PDF con solo ítems revisados (solo admin de compras).
+     * MODIFICADA: Ahora incluye el mapa de centros de costos.
      */
     public function exportPdfRevisados(Solicitud $solicitud)
     {
@@ -207,9 +216,16 @@ class SolicitudController extends Controller
 
         $itemsRevisados = $solicitud->items->where('revisado', 1);
 
+        // === NUEVO: Generar mapa de Centros de Costos ===
+        $centrosMap = CentroCosto::all()->mapWithKeys(function ($centro) {
+            $codigo = $centro->cc . '-' . $centro->sc;
+            return [$codigo => $centro->nombre_area];
+        });
+
         $pdf = Pdf::loadView('pdf.solicitud', [
-            'solicitud' => $solicitud,
+            'solicitud'      => $solicitud,
             'itemsRevisados' => $itemsRevisados,
+            'centrosMap'     => $centrosMap, // Pasamos el mapa a la vista
         ])->setPaper('letter', 'portrait');
 
         $fileName = 'solicitud_' . $solicitud->consecutivo . '_revisados.pdf';
@@ -358,10 +374,10 @@ class SolicitudController extends Controller
 
         // Estadísticas por tipo
         $statsTipos = [
-            'estandar'           => $allSolicitudes->where('tipo_solicitud', 'estandar')->count(),
-            'traslado_bodegas'   => $allSolicitudes->where('tipo_solicitud', 'traslado_bodegas')->count(),
-            'solicitud_pedidos'  => $allSolicitudes->where('tipo_solicitud', 'solicitud_pedidos')->count(),
-            'solicitud_mtto'     => $allSolicitudes->where('tipo_solicitud', 'solicitud_mtto')->count(), 
+            'estandar'          => $allSolicitudes->where('tipo_solicitud', 'estandar')->count(),
+            'traslado_bodegas'  => $allSolicitudes->where('tipo_solicitud', 'traslado_bodegas')->count(),
+            'solicitud_pedidos' => $allSolicitudes->where('tipo_solicitud', 'solicitud_pedidos')->count(),
+            'solicitud_mtto'    => $allSolicitudes->where('tipo_solicitud', 'solicitud_mtto')->count(), 
         ];
 
         // Estadísticas por mes
@@ -433,10 +449,10 @@ class SolicitudController extends Controller
         ];
 
         $statsTipos = [
-            'estandar'           => $solicitudes->where('tipo_solicitud', 'estandar')->count(),
-            'traslado_bodegas'   => $solicitudes->where('tipo_solicitud', 'traslado_bodegas')->count(),
-            'solicitud_pedidos'  => $solicitudes->where('tipo_solicitud', 'solicitud_pedidos')->count(),
-            'solicitud_mtto'     => $solicitudes->where('tipo_solicitud', 'solicitud_mtto')->count(),
+            'estandar'          => $solicitudes->where('tipo_solicitud', 'estandar')->count(),
+            'traslado_bodegas'  => $solicitudes->where('tipo_solicitud', 'traslado_bodegas')->count(),
+            'solicitud_pedidos' => $solicitudes->where('tipo_solicitud', 'solicitud_pedidos')->count(),
+            'solicitud_mtto'    => $solicitudes->where('tipo_solicitud', 'solicitud_mtto')->count(),
         ];
 
         $filtros = [
@@ -458,4 +474,3 @@ class SolicitudController extends Controller
         return $pdf->download($fileName);
     }
 }
-

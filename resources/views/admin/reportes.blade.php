@@ -1,6 +1,24 @@
 @extends('layouts.app')
 
 @section('content')
+
+<!-- === ESTILOS PARA LA ANIMACIÓN (NO TOCAR) === -->
+<style>
+    /* Clase maestra para la animación */
+    .efecto-hover {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        cursor: pointer;
+        position: relative;
+    }
+    
+    .efecto-hover:hover {
+        transform: translateY(-5px) scale(1.05) !important; /* Levanta y agranda */
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1) !important; /* Sombra profunda */
+        z-index: 50 !important;
+        filter: brightness(1.05); /* Brillo sutil */
+    }
+</style>
+
 <div style="background-image: url('/images/create-solicitud.jpg'); 
             background-size: cover; 
             background-position: center; 
@@ -13,7 +31,7 @@
         <!-- Botón Volver -->
         <div class="mb-8">
             <a href="{{ route('dashboard') }}" 
-               class="inline-flex items-center px-6 py-3 bg-white bg-opacity-70 backdrop-blur-md border border-white/20 rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:bg-opacity-80 text-gray-800 font-semibold">
+               class="inline-flex items-center px-6 py-3 bg-white bg-opacity-70 backdrop-blur-md border border-white/20 rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:bg-opacity-80 text-gray-800 font-semibold efecto-hover">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                 </svg>
@@ -70,53 +88,54 @@
                             <option value="estandar" {{ request('tipo_solicitud') == 'estandar' ? 'selected' : '' }}>Solicitud Estándar</option>
                             <option value="traslado_bodegas" {{ request('tipo_solicitud') == 'traslado_bodegas' ? 'selected' : '' }}>Traslados entre Bodegas</option>
                             <option value="solicitud_pedidos" {{ request('tipo_solicitud') == 'solicitud_pedidos' ? 'selected' : '' }}>Solicitud de Pedidos</option>
+                            <option value="solicitud_mtto" {{ request('tipo_solicitud') == 'solicitud_mtto' ? 'selected' : '' }}>Solicitud Mantenimiento</option>
                         </select>
                     </div>
                     
                 </div>
 
-                <!-- Botones de Acción -->
+                <!-- Botones de Acción (CON ANIMACIÓN) -->
                 <div class="flex flex-wrap gap-4">
-                    <button type="submit" class="flex-1 min-w-[180px] bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl">
+                    <button type="submit" class="flex-1 min-w-[180px] bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl efecto-hover">
                         🔍 Filtrar Resultados
                     </button>
 
                     <a href="{{ route('admin.reportes.export', request()->query()) }}" 
-                       class="flex-1 min-w-[180px] bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-xl text-center transition-all duration-300 shadow-lg hover:shadow-xl">
+                       class="flex-1 min-w-[180px] bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-xl text-center transition-all duration-300 shadow-lg hover:shadow-xl efecto-hover">
                         📥 Exportar a Excel
                     </a>
 
                     <a href="{{ route('admin.reportes.exportPdf', request()->query()) }}" 
-                       class="flex-1 min-w-[180px] bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-xl text-center transition-all duration-300 shadow-lg hover:shadow-xl">
+                       class="flex-1 min-w-[180px] bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-xl text-center transition-all duration-300 shadow-lg hover:shadow-xl efecto-hover">
                         📄 Exportar a PDF
                     </a>
 
                     <a href="{{ route('admin.reportes') }}" 
-                       class="px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white font-semibold rounded-xl transition-all duration-300">
+                       class="px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white font-semibold rounded-xl transition-all duration-300 efecto-hover">
                         🔄 Limpiar Filtros
                     </a>
                 </div>
             </form>
 
-            <!-- Estadísticas -->
+            <!-- Estadísticas (CON ANIMACIÓN) -->
             <div class="grid md:grid-cols-5 gap-4 mb-8">
-                <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-xl shadow-xl">
+                <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-xl shadow-xl efecto-hover">
                     <h3 class="text-sm font-semibold opacity-90 mb-1">Total</h3>
                     <p class="text-3xl font-bold">{{ $stats['total'] }}</p>
                 </div>
-                <div class="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white p-6 rounded-xl shadow-xl">
+                <div class="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white p-6 rounded-xl shadow-xl efecto-hover">
                     <h3 class="text-sm font-semibold opacity-90 mb-1">Pendientes</h3>
                     <p class="text-3xl font-bold">{{ $stats['pendiente'] }}</p>
                 </div>
-                <div class="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-6 rounded-xl shadow-xl">
+                <div class="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-6 rounded-xl shadow-xl efecto-hover">
                     <h3 class="text-sm font-semibold opacity-90 mb-1">En Proceso</h3>
                     <p class="text-3xl font-bold">{{ $stats['en_proceso'] }}</p>
                 </div>
-                <div class="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-xl shadow-xl">
+                <div class="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-xl shadow-xl efecto-hover">
                     <h3 class="text-sm font-semibold opacity-90 mb-1">Finalizadas</h3>
                     <p class="text-3xl font-bold">{{ $stats['finalizada'] }}</p>
                 </div>
-                <div class="bg-gradient-to-r from-red-500 to-red-600 text-white p-6 rounded-xl shadow-xl">
+                <div class="bg-gradient-to-r from-red-500 to-red-600 text-white p-6 rounded-xl shadow-xl efecto-hover">
                     <h3 class="text-sm font-semibold opacity-90 mb-1">Rechazadas</h3>
                     <p class="text-3xl font-bold">{{ $stats['rechazada'] }}</p>
                 </div>
@@ -148,11 +167,13 @@
                                     </td>
                                     <td class="px-6 py-4">
                                         @php
-                                            $tipoColor = [
+                                            $tipoColor = match($solicitud->tipo_solicitud) {
                                                 'estandar' => 'bg-green-100 text-green-800',
                                                 'traslado_bodegas' => 'bg-blue-100 text-blue-800',
                                                 'solicitud_pedidos' => 'bg-yellow-100 text-yellow-800',
-                                            ][$solicitud->tipo_solicitud] ?? 'bg-gray-100 text-gray-800';
+                                                'solicitud_mtto' => 'bg-purple-100 text-purple-800',
+                                                default => 'bg-gray-100 text-gray-800'
+                                            };
                                         @endphp
                                         <span class="px-3 py-1 {{ $tipoColor }} text-xs font-semibold rounded-full">
                                             {{ ucwords(str_replace('_', ' ', $solicitud->tipo_solicitud)) }}
@@ -160,15 +181,16 @@
                                     </td>
                                     <td class="px-6 py-4">
                                         @php
-                                            $estadoColor = [
+                                            $estadoColor = match($solicitud->estado) {
                                                 'pendiente' => 'bg-yellow-100 text-yellow-800',
                                                 'en_proceso' => 'bg-blue-100 text-blue-800',
                                                 'finalizada' => 'bg-green-100 text-green-800',
                                                 'rechazada' => 'bg-red-100 text-red-800',
-                                            ][$solicitud->estado] ?? 'bg-gray-100 text-gray-800';
+                                                default => 'bg-gray-100 text-gray-800'
+                                            };
                                         @endphp
                                         <span class="px-3 py-1 {{ $estadoColor }} text-xs font-semibold rounded-full">
-                                            {{ ucfirst($solicitud->estado) }}
+                                            {{ ucfirst(str_replace('_', ' ', $solicitud->estado)) }}
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-sm">{{ $solicitud->user->name ?? 'N/A' }}</td>

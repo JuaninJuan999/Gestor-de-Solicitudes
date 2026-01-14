@@ -99,8 +99,8 @@
                                                 @foreach($centrosCostos->groupBy('departamento') as $depto => $areas)
                                                     <optgroup label="{{ $depto }}">
                                                         @foreach($areas as $area)
-                                                            {{-- value = nombre_area (como ya lo tienes) --}}
-                                                            <option value="{{ $area->nombre_area }}">
+                                                            {{-- CAMBIO AQUÍ: Value ahora guarda el CÓDIGO --}}
+                                                            <option value="{{ "{$area->cc}-{$area->sc}" }}">
                                                                 {{ $area->cc }}-{{ $area->sc }} | {{ $area->nombre_area }} ({{ $area->cuenta_contable }})
                                                             </option>
                                                         @endforeach
@@ -197,7 +197,8 @@
                     @foreach($centrosCostos->groupBy('departamento') as $depto => $areas)
                         <optgroup label="{{ $depto }}">
                             @foreach($areas as $area)
-                                <option value="{{ $area->nombre_area }}">
+                                {{-- CAMBIO AQUÍ: Value ahora guarda el CÓDIGO en el JS también --}}
+                                <option value="{{ "{$area->cc}-{$area->sc}" }}">
                                     {{ $area->cc }}-{{ $area->sc }} | {{ $area->nombre_area }} ({{ $area->cuenta_contable }})
                                 </option>
                             @endforeach

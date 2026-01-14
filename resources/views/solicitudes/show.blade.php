@@ -106,11 +106,18 @@
                         </span>
                     </div>
 
-                    <!-- Centro de costos -->
+                    <!-- Centro de costos (MODIFICADO: Código + Nombre en misma línea) -->
                     <div class="bg-white/70 p-4 rounded-xl shadow">
                         <label class="block text-sm font-bold text-gray-700 mb-2">Centro de Costos:</label>
-                        <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-lg text-sm font-semibold">
-                            {{ $solicitud->centro_costos ?? 'Sin centro de costos' }}
+                        <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-lg text-sm font-semibold inline-block">
+                            @if($solicitud->centro_costos)
+                                {{ $solicitud->centro_costos }} 
+                                @if(isset($centrosMap[$solicitud->centro_costos]))
+                                    - {{ $centrosMap[$solicitud->centro_costos] }}
+                                @endif
+                            @else
+                                Sin centro de costos
+                            @endif
                         </span>
                     </div>
 
@@ -180,7 +187,7 @@
                 @if($itemsTabla->isNotEmpty() || !empty($itemsJson))
                     <div class="overflow-x-auto bg-white/70 rounded-xl shadow mb-4">
                         
-                        <!-- TABLA PARA ESTÁNDAR (CON CAMBIOS) -->
+                        <!-- TABLA PARA ESTÁNDAR -->
                         @if($solicitud->tipo_solicitud == 'estandar')
                             <table class="min-w-full border-collapse border border-gray-300">
                                 <thead class="bg-green-600 text-white">
@@ -211,13 +218,28 @@
                                             <td class="border border-gray-300 px-4 py-2 text-center">{{ $item->unidad ?? '-' }}</td>
                                             <td class="border border-gray-300 px-4 py-2">{{ $item->descripcion ?? '-' }}</td>
                                             <td class="border border-gray-300 px-4 py-2 text-center">{{ $item->cantidad ?? '-' }}</td>
-                                            <td class="border border-gray-300 px-4 py-2 text-center">{{ $item->centro_costos_item ?? '-' }}</td>
+                                            
+                                            <!-- Centro de Costo (ESTÁNDAR) -->
+                                            <td class="border border-gray-300 px-4 py-2 text-center">
+                                                @if($item->centro_costos_item)
+                                                    <div class="flex flex-col">
+                                                        <span class="text-sm font-bold text-gray-900">
+                                                            {{ $item->centro_costos_item }}
+                                                        </span>
+                                                        <span class="text-xs text-gray-500">
+                                                            {{ $centrosMap[$item->centro_costos_item] ?? '' }}
+                                                        </span>
+                                                    </div>
+                                                @else
+                                                    -
+                                                @endif
+                                            </td>
                                         </tr>
                                     @endforeach
                                 </tbody>
                             </table>
 
-                        <!-- TABLA PARA TRASLADOS -->
+                        <!-- TABLA PARA TRASLADOS (MODIFICADA: Título BODEGA, Contenido con mapa) -->
                         @elseif($solicitud->tipo_solicitud == 'traslado_bodegas')
                             <table class="min-w-full border-collapse border border-gray-300">
                                 <thead class="bg-blue-600 text-white">
@@ -246,7 +268,24 @@
                                             <td class="border border-gray-300 px-4 py-2">{{ $item->codigo ?? '-' }}</td>
                                             <td class="border border-gray-300 px-4 py-2">{{ $item->descripcion ?? '-' }}</td>
                                             <td class="border border-gray-300 px-4 py-2 text-center">{{ $item->cantidad ?? '-' }}</td>
-                                            <td class="border border-gray-300 px-4 py-2">{{ $item->bodega ?? '-' }}</td>
+                                            
+                                            <!-- Columna Bodega (Con mapa de nombres) -->
+                                            <td class="border border-gray-300 px-4 py-2 text-center">
+                                                @if($item->bodega)
+                                                    <div class="flex flex-col">
+                                                        <span class="text-sm font-bold text-gray-900">
+                                                            {{ $item->bodega }}
+                                                        </span>
+                                                        @if(isset($centrosMap[$item->bodega]))
+                                                            <span class="text-xs text-gray-500">
+                                                                {{ $centrosMap[$item->bodega] }}
+                                                            </span>
+                                                        @endif
+                                                    </div>
+                                                @else
+                                                    -
+                                                @endif
+                                            </td>
                                         </tr>
                                     @endforeach
                                 </tbody>
@@ -283,7 +322,22 @@
                                             <td class="border px-4 py-2">{{ $item->descripcion ?? '-' }}</td>
                                             <td class="border px-4 py-2">{{ $item->cantidad ?? '-' }}</td>
                                             <td class="border px-4 py-2">{{ $item->area_consumo ?? '-' }}</td>
-                                            <td class="border px-4 py-2">{{ $item->centro_costos_item ?? '-' }}</td>
+                                            
+                                            <!-- Centro de Costos (PEDIDOS) -->
+                                            <td class="border px-4 py-2">
+                                                @if($item->centro_costos_item)
+                                                    <div class="flex flex-col">
+                                                        <span class="text-sm font-bold text-gray-900">
+                                                            {{ $item->centro_costos_item }}
+                                                        </span>
+                                                        <span class="text-xs text-gray-500">
+                                                            {{ $centrosMap[$item->centro_costos_item] ?? '' }}
+                                                        </span>
+                                                    </div>
+                                                @else
+                                                    -
+                                                @endif
+                                            </td>
                                         </tr>
                                     @endforeach
                                 </tbody>

@@ -135,7 +135,16 @@
         <p><strong>Título:</strong> {{ $solicitud->titulo }}</p>
         <p><strong>Usuario:</strong> {{ $solicitud->user->name ?? '-' }}</p>
         <p><strong>Área:</strong> {{ $solicitud->user->area ?? '-' }}</p>
-        <p><strong>Centro de Costos General:</strong> {{ $solicitud->centro_costos ?? '-' }}</p>
+        
+        <!-- Centro de Costos General (con nombre si existe) -->
+        <p>
+            <strong>Centro de Costos General:</strong> 
+            {{ $solicitud->centro_costos ?? '-' }}
+            @if(isset($solicitud->centro_costos) && isset($centrosMap[$solicitud->centro_costos]))
+                 - {{ $centrosMap[$solicitud->centro_costos] }}
+            @endif
+        </p>
+
         <p><strong>Estado:</strong> {{ ucfirst($solicitud->estado) }}</p>
         <p><strong>Tipo:</strong> 
             @if($solicitud->tipo_solicitud == 'estandar') Solicitud Estándar
@@ -196,18 +205,33 @@
                             <td class="text-center">{{ $item->unidad ?? '-' }}</td>
                             <td>{{ $item->descripcion ?? '-' }}</td>
                             <td class="text-center">{{ $item->cantidad ?? '-' }}</td>
-                            <td class="text-center">{{ $item->centro_costos_item ?? '-' }}</td>
+                            <td class="text-center">
+                                {{ $item->centro_costos_item ?? '-' }}
+                                @if(isset($item->centro_costos_item) && isset($centrosMap[$item->centro_costos_item]))
+                                    <br><small>{{ $centrosMap[$item->centro_costos_item] }}</small>
+                                @endif
+                            </td>
                         @elseif($solicitud->tipo_solicitud == 'traslado_bodegas')
                             <td>{{ $item->codigo ?? '-' }}</td>
                             <td>{{ $item->descripcion ?? '-' }}</td>
                             <td class="text-center">{{ $item->cantidad ?? '-' }}</td>
-                            <td>{{ $item->bodega ?? '-' }}</td>
+                            <td>
+                                {{ $item->bodega ?? '-' }}
+                                @if(isset($item->bodega) && isset($centrosMap[$item->bodega]))
+                                    <br><small>{{ $centrosMap[$item->bodega] }}</small>
+                                @endif
+                            </td>
                         @elseif($solicitud->tipo_solicitud == 'solicitud_pedidos')
                             <td>{{ $item->codigo ?? '-' }}</td>
                             <td>{{ $item->descripcion ?? '-' }}</td>
                             <td class="text-center">{{ $item->cantidad ?? '-' }}</td>
                             <td>{{ $item->area_consumo ?? '-' }}</td>
-                            <td>{{ $item->centro_costos_item ?? '-' }}</td>
+                            <td>
+                                {{ $item->centro_costos_item ?? '-' }}
+                                @if(isset($item->centro_costos_item) && isset($centrosMap[$item->centro_costos_item]))
+                                    <br><small>{{ $centrosMap[$item->centro_costos_item] }}</small>
+                                @endif
+                            </td>
                         @elseif($solicitud->tipo_solicitud == 'solicitud_mtto')
                             <td>{{ $item->descripcion ?? '-' }}</td>
                             <td>{{ $item->especificaciones ?? '-' }}</td>

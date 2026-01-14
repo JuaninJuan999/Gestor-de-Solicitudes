@@ -9,6 +9,7 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Font;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Worksheet\Drawing; // Para el logo
 use PhpOffice\PhpSpreadsheet\Chart\Chart;
 use PhpOffice\PhpSpreadsheet\Chart\Legend;
 use PhpOffice\PhpSpreadsheet\Chart\Title;
@@ -38,51 +39,73 @@ class SolicitudesExport
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Solicitudes');
 
+        // =======================
+        // 1. LOGO INSTITUCIONAL
+        // =======================
+        $logoPath = public_path('images/logos/logo2.png'); // Asegúrate que exista esta imagen
+        if (file_exists($logoPath)) {
+            $drawing = new Drawing();
+            $drawing->setName('Logo');
+            $drawing->setDescription('Logo Institucional');
+            $drawing->setPath($logoPath);
+            $drawing->setHeight(50); // Altura en píxeles
+            $drawing->setCoordinates('A1');
+            $drawing->setWorksheet($sheet);
+        }
+
+        // =======================
+        // 2. TÍTULO DEL REPORTE
+        // =======================
+        // Fusionar celdas A1 hasta H3 para el encabezado
+        $sheet->mergeCells('A1:H3'); 
+        $sheet->setCellValue('A1', "REPORTE DE GESTIÓN DE SOLICITUDES\nGenerado el: " . date('d/m/Y H:i'));
+        
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('1E40AF'));
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A1')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('A1')->getAlignment()->setWrapText(true);
+
+        // Ajustar altura de las filas del encabezado
+        $sheet->getRowDimension(1)->setRowHeight(20);
+        $sheet->getRowDimension(2)->setRowHeight(20);
+        $sheet->getRowDimension(3)->setRowHeight(20);
+
+        // =======================
+        // 3. TABLA DE DATOS
+        // =======================
+        
+        // Fila donde empiezan los encabezados de la tabla (ahora bajamos a la fila 5)
+        $startRow = 5; 
+
         // Encabezados
         $headings = [
-            'Consecutivo',
-            'Tipo',
-            'Estado',
-            'Usuario',
-            'Área',
-            'Centro Costos',
-            'Fecha Creación',
-            'Items',
+            'Consecutivo', 'Tipo', 'Estado', 'Usuario', 'Área', 'Centro Costos', 'Fecha Creación', 'Items'
         ];
 
-        // Encabezados A1:H1
         $colLetter = 'A';
         foreach ($headings as $heading) {
-            $sheet->setCellValue($colLetter . '1', $heading);
+            $sheet->setCellValue($colLetter . $startRow, $heading);
             $colLetter++;
         }
 
-        $this->styleHeader($sheet, count($headings));
+        $this->styleHeader($sheet, count($headings), $startRow);
 
-        // Datos con filtros
+        // Consulta de datos
         $query = Solicitud::with('user');
 
-        if ($this->fechaInicio) {
-            $query->whereDate('created_at', '>=', $this->fechaInicio);
-        }
-        if ($this->fechaFin) {
-            $query->whereDate('created_at', '<=', $this->fechaFin);
-        }
-        if ($this->estado) {
-            $query->where('estado', $this->estado);
-        }
-        if ($this->tipoSolicitud) {
-            $query->where('tipo_solicitud', $this->tipoSolicitud);
-        }
+        if ($this->fechaInicio) $query->whereDate('created_at', '>=', $this->fechaInicio);
+        if ($this->fechaFin) $query->whereDate('created_at', '<=', $this->fechaFin);
+        if ($this->estado) $query->where('estado', $this->estado);
+        if ($this->tipoSolicitud) $query->where('tipo_solicitud', $this->tipoSolicitud);
 
         $solicitudes = $query->orderBy('created_at', 'desc')->get();
 
-        // Llenar tabla principal
-        $row = 2;
+        // Llenar datos
+        $row = $startRow + 1;
         foreach ($solicitudes as $solicitud) {
             $sheet->setCellValue('A' . $row, $solicitud->consecutivo ?? 'N/A');
             $sheet->setCellValue('B' . $row, ucwords(str_replace('_', ' ', $solicitud->tipo_solicitud)));
-            $sheet->setCellValue('C' . $row, ucfirst($solicitud->estado));
+            $sheet->setCellValue('C' . $row, ucfirst(str_replace('_', ' ', $solicitud->estado)));
             $sheet->setCellValue('D' . $row, $solicitud->user->name ?? 'N/A');
             $sheet->setCellValue('E' . $row, $solicitud->user->area ?? 'N/A');
             $sheet->setCellValue('F' . $row, $solicitud->centro_costos ?? '');
@@ -91,286 +114,197 @@ class SolicitudesExport
             $row++;
         }
 
-        $this->styleData($sheet, $row - 1, count($headings));
+        $this->styleData($sheet, $row - 1, count($headings), $startRow + 1);
 
         // =======================
-        // Gráfico 1: por estado
+        // GRÁFICO 1: ESTADOS
         // =======================
         $statsEstados = [
             'Pendiente'  => $solicitudes->where('estado', 'pendiente')->count(),
+            'Aprobado Sup.' => $solicitudes->where('estado', 'aprobado_supervisor')->count(),
             'En Proceso' => $solicitudes->where('estado', 'en_proceso')->count(),
             'Finalizada' => $solicitudes->where('estado', 'finalizada')->count(),
             'Rechazada'  => $solicitudes->where('estado', 'rechazada')->count(),
         ];
 
-        $sheet->setCellValue('J1', 'Estado');
-        $sheet->setCellValue('K1', 'Cantidad');
-
-        $grafRow = 2;
-        foreach ($statsEstados as $estadoNombre => $cantidad) {
-            $sheet->setCellValue('J' . $grafRow, $estadoNombre);
-            $sheet->setCellValue('K' . $grafRow, $cantidad);
+        // Datos auxiliares (Columna J y K)
+        $sheet->setCellValue('J' . $startRow, 'Estado');
+        $sheet->setCellValue('K' . $startRow, 'Cant.');
+        
+        $grafRow = $startRow + 1;
+        foreach ($statsEstados as $estado => $cant) {
+            $sheet->setCellValue('J' . $grafRow, $estado);
+            $sheet->setCellValue('K' . $grafRow, $cant);
             $grafRow++;
         }
 
-        $categoryRange1 = new DataSeriesValues(
-            DataSeriesValues::DATASERIES_TYPE_STRING,
-            'Solicitudes!$J$2:$J$5',
-            null,
-            4
+        // Definir rangos dinámicos
+        $lastStatRow = $grafRow - 1;
+        
+        $chart1 = $this->createChart(
+            'Solicitudes por Estado', 
+            "Solicitudes!\$J$" . ($startRow+1) . ":\$J$" . $lastStatRow, 
+            "Solicitudes!\$K$" . ($startRow+1) . ":\$K$" . $lastStatRow,
+            count($statsEstados)
         );
-
-        $valuesRange1 = new DataSeriesValues(
-            DataSeriesValues::DATASERIES_TYPE_NUMBER,
-            'Solicitudes!$K$2:$K$5',
-            null,
-            4
-        );
-
-        $series1 = new DataSeries(
-            DataSeries::TYPE_BARCHART,
-            DataSeries::GROUPING_CLUSTERED,
-            range(0, 0),
-            [],
-            [$categoryRange1],
-            [$valuesRange1]
-        );
-        $series1->setPlotDirection(DataSeries::DIRECTION_COL);
-
-        $layout1   = new Layout();
-        $layout1->setShowVal(true);
-        $plotArea1 = new \PhpOffice\PhpSpreadsheet\Chart\PlotArea($layout1, [$series1]);
-        $legend1   = new Legend(Legend::POSITION_RIGHT, null, false);
-        $title1    = new Title('Solicitudes por estado');
-
-        $chart1 = new Chart(
-            'chart_estados',
-            $title1,
-            $legend1,
-            $plotArea1,
-            true,
-            0,
-            null,
-            null
-        );
-        $chart1->setTopLeftPosition('J7');
-        $chart1->setBottomRightPosition('R25');
+        $chart1->setTopLeftPosition('J' . ($startRow + 10));
+        $chart1->setBottomRightPosition('R' . ($startRow + 25));
         $sheet->addChart($chart1);
 
         // =======================
-        // Gráfico 2: por tipo
+        // GRÁFICO 2: TIPOS (CORREGIDO: Incluye Mtto)
         // =======================
         $statsTipos = [
-            'Estándar'          => $solicitudes->where('tipo_solicitud', 'estandar')->count(),
-            'Traslado Bodegas'  => $solicitudes->where('tipo_solicitud', 'traslado_bodegas')->count(),
-            'Solicitud Pedidos' => $solicitudes->where('tipo_solicitud', 'solicitud_pedidos')->count(),
+            'Estándar'         => $solicitudes->where('tipo_solicitud', 'estandar')->count(),
+            'Traslado Bodegas' => $solicitudes->where('tipo_solicitud', 'traslado_bodegas')->count(),
+            'Pedidos'          => $solicitudes->where('tipo_solicitud', 'solicitud_pedidos')->count(),
+            'Mantenimiento'    => $solicitudes->where('tipo_solicitud', 'solicitud_mtto')->count(), // ¡Agregado!
         ];
 
-        $sheet->setCellValue('M1', 'Tipo Solicitud');
-        $sheet->setCellValue('N1', 'Cantidad');
+        // Datos auxiliares (Columna M y N)
+        $sheet->setCellValue('M' . $startRow, 'Tipo');
+        $sheet->setCellValue('N' . $startRow, 'Cant.');
 
-        $grafRow2 = 2;
-        foreach ($statsTipos as $tipoNombre => $cantidad) {
-            $sheet->setCellValue('M' . $grafRow2, $tipoNombre);
-            $sheet->setCellValue('N' . $grafRow2, $cantidad);
+        $grafRow2 = $startRow + 1;
+        foreach ($statsTipos as $tipo => $cant) {
+            $sheet->setCellValue('M' . $grafRow2, $tipo);
+            $sheet->setCellValue('N' . $grafRow2, $cant);
             $grafRow2++;
         }
+        
+        $lastStatRow2 = $grafRow2 - 1;
 
-        $categoryRange2 = new DataSeriesValues(
-            DataSeriesValues::DATASERIES_TYPE_STRING,
-            'Solicitudes!$M$2:$M$4',
-            null,
-            3
+        $chart2 = $this->createChart(
+            'Solicitudes por Tipo', 
+            "Solicitudes!\$M$" . ($startRow+1) . ":\$M$" . $lastStatRow2, 
+            "Solicitudes!\$N$" . ($startRow+1) . ":\$N$" . $lastStatRow2,
+            count($statsTipos)
         );
-
-        $valuesRange2 = new DataSeriesValues(
-            DataSeriesValues::DATASERIES_TYPE_NUMBER,
-            'Solicitudes!$N$2:$N$4',
-            null,
-            3
-        );
-
-        $series2 = new DataSeries(
-            DataSeries::TYPE_BARCHART,
-            DataSeries::GROUPING_CLUSTERED,
-            range(0, 0),
-            [],
-            [$categoryRange2],
-            [$valuesRange2]
-        );
-        $series2->setPlotDirection(DataSeries::DIRECTION_COL);
-
-        $layout2   = new Layout();
-        $layout2->setShowVal(true);
-        $plotArea2 = new \PhpOffice\PhpSpreadsheet\Chart\PlotArea($layout2, [$series2]);
-        $legend2   = new Legend(Legend::POSITION_RIGHT, null, false);
-        $title2    = new Title('Solicitudes por tipo');
-
-        $chart2 = new Chart(
-            'chart_tipos',
-            $title2,
-            $legend2,
-            $plotArea2,
-            true,
-            0,
-            null,
-            null
-        );
-        $chart2->setTopLeftPosition('J27');
-        $chart2->setBottomRightPosition('R45');
+        $chart2->setTopLeftPosition('J' . ($startRow + 27));
+        $chart2->setBottomRightPosition('R' . ($startRow + 42));
         $sheet->addChart($chart2);
-
-        // ==========================
-        // Gráfico 3: solicitudes/mes
-        // ==========================
-        // Inicializar meses 1–12
+        
+        // =======================
+        // GRÁFICO 3: LINEA DE TIEMPO (POR MES)
+        // =======================
+        
+        // 1. Calcular datos por mes (1-12)
         $statsMeses = array_fill(1, 12, 0);
         foreach ($solicitudes as $solicitud) {
             $mes = (int)$solicitud->created_at->format('n');
             $statsMeses[$mes]++;
         }
 
-        // Tabla auxiliar en P1:Q13
-        $sheet->setCellValue('P1', 'Mes');
-        $sheet->setCellValue('Q1', 'Cantidad');
+        // 2. Escribir datos auxiliares en columnas P y Q
+        $sheet->setCellValue('P' . $startRow, 'Mes');
+        $sheet->setCellValue('Q' . $startRow, 'Cant.');
 
-        $mesesCortos = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-
-        $grafRow3 = 2;
+        $mesesNombres = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+        
+        $grafRow3 = $startRow + 1;
         for ($m = 1; $m <= 12; $m++) {
-            $sheet->setCellValue('P' . $grafRow3, $mesesCortos[$m - 1]);
+            $sheet->setCellValue('P' . $grafRow3, $mesesNombres[$m - 1]);
             $sheet->setCellValue('Q' . $grafRow3, $statsMeses[$m]);
             $grafRow3++;
         }
 
-        $categoryRange3 = new DataSeriesValues(
-            DataSeriesValues::DATASERIES_TYPE_STRING,
-            'Solicitudes!$P$2:$P$13',
-            null,
-            12
-        );
+        // 3. Crear el gráfico de LÍNEA
+        $lastStatRow3 = $grafRow3 - 1;
+        
+        // Usamos una lógica manual aquí porque es LINECHART, no BARCHART
+        $catRange3 = "Solicitudes!\$P$" . ($startRow+1) . ":\$P$" . $lastStatRow3;
+        $valRange3 = "Solicitudes!\$Q$" . ($startRow+1) . ":\$Q$" . $lastStatRow3;
 
-        $valuesRange3 = new DataSeriesValues(
-            DataSeriesValues::DATASERIES_TYPE_NUMBER,
-            'Solicitudes!$Q$2:$Q$13',
-            null,
-            12
-        );
+        $category3 = new DataSeriesValues(DataSeriesValues::DATASERIES_TYPE_STRING, $catRange3, null, 12);
+        $values3   = new DataSeriesValues(DataSeriesValues::DATASERIES_TYPE_NUMBER, $valRange3, null, 12);
 
         $series3 = new DataSeries(
-            DataSeries::TYPE_LINECHART,
+            DataSeries::TYPE_LINECHART, // <--- Tipo Línea
             DataSeries::GROUPING_STANDARD,
-            range(0, 0),
-            [],
-            [$categoryRange3],
-            [$valuesRange3]
+            range(0,0), [], [$category3], [$values3]
         );
 
-        $layout3   = new Layout();
-        $layout3->setShowVal(false);
+        $layout3 = new Layout(); $layout3->setShowVal(true); // Mostrar valores en los puntos
         $plotArea3 = new \PhpOffice\PhpSpreadsheet\Chart\PlotArea($layout3, [$series3]);
-        $legend3   = new Legend(Legend::POSITION_RIGHT, null, false);
-        $title3    = new Title('Solicitudes por mes');
+        $legend3 = new Legend(Legend::POSITION_BOTTOM, null, false);
+        $title3 = new Title('Tendencia Mensual');
 
-        $chart3 = new Chart(
-            'chart_meses',
-            $title3,
-            $legend3,
-            $plotArea3,
-            true,
-            0,
-            null,
-            null
-        );
-        $chart3->setTopLeftPosition('A' . ($row + 2));      // debajo de la tabla
-        $chart3->setBottomRightPosition('I' . ($row + 22)); // ocupa ancho de tabla
+        $chart3 = new Chart('chart_meses', $title3, $legend3, $plotArea3, true, 0, null, null);
+        
+        // Ubicación: Debajo de la tabla de datos principal (Aprox fila + 5)
+        $chart3->setTopLeftPosition('A' . ($row + 3)); 
+        $chart3->setBottomRightPosition('H' . ($row + 20)); // Ancho completo de la tabla
+
         $sheet->addChart($chart3);
 
-        // Ajustar ancho columnas principales
-        $this->autoFitColumns($sheet, count($headings));
 
+        // =======================
+        // Ajustes Finales
+        // =======================
+        $this->autoFitColumns($sheet, count($headings));
+        
         $writer = new Xlsx($spreadsheet);
-        $writer->setIncludeCharts(true); // imprescindible
+        $writer->setIncludeCharts(true);
 
         return new StreamedResponse(function () use ($writer) {
             $writer->save('php://output');
         }, 200, [
-            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'Content-Disposition' => 'attachment;filename="' . $fileName . '"',
-            'Cache-Control'       => 'max-age=0',
+            'Cache-Control' => 'max-age=0',
         ]);
     }
 
-    private function styleHeader($sheet, $colCount)
+    // Helper para crear gráficos más limpio
+    private function createChart($title, $catRange, $valRange, $count) {
+        $category = new DataSeriesValues(DataSeriesValues::DATASERIES_TYPE_STRING, $catRange, null, $count);
+        $values   = new DataSeriesValues(DataSeriesValues::DATASERIES_TYPE_NUMBER, $valRange, null, $count);
+        
+        $series = new DataSeries(
+            DataSeries::TYPE_BARCHART, 
+            DataSeries::GROUPING_CLUSTERED, 
+            range(0,0), [], [$category], [$values]
+        );
+        $series->setPlotDirection(DataSeries::DIRECTION_COL);
+
+        $layout = new Layout(); $layout->setShowVal(true);
+        $plotArea = new \PhpOffice\PhpSpreadsheet\Chart\PlotArea($layout, [$series]);
+        $legend = new Legend(Legend::POSITION_RIGHT, null, false);
+        $titleObj = new Title($title);
+
+        return new Chart('chart_'.rand(), $titleObj, $legend, $plotArea, true, 0, null, null);
+    }
+
+    private function styleHeader($sheet, $colCount, $row)
     {
-        $headerRange = 'A1:' . chr(64 + $colCount) . '1';
-
-        $sheet->getStyle($headerRange)->getFill()
-            ->setFillType(Fill::FILL_SOLID)
-            ->getStartColor()->setRGB('1E40AF');
-
-        $sheet->getStyle($headerRange)->getFont()
-            ->setBold(true)
-            ->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FFFFFF'))
-            ->setSize(11);
-
-        $sheet->getStyle($headerRange)->getAlignment()
-            ->setHorizontal(Alignment::HORIZONTAL_CENTER)
-            ->setVertical(Alignment::VERTICAL_CENTER)
-            ->setWrapText(true);
-
-        $sheet->getRowDimension(1)->setRowHeight(25);
-
+        $headerRange = 'A'.$row.':' . chr(64 + $colCount) . $row;
+        $sheet->getStyle($headerRange)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('1E40AF');
+        $sheet->getStyle($headerRange)->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FFFFFF'))->setSize(11);
+        $sheet->getStyle($headerRange)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $this->applyBorders($sheet, $headerRange);
     }
 
-    private function styleData($sheet, $lastRow, $colCount)
+    private function styleData($sheet, $lastRow, $colCount, $startRow)
     {
-        $dataRange = 'A2:' . chr(64 + $colCount) . $lastRow;
-
+        $dataRange = 'A'.$startRow.':' . chr(64 + $colCount) . $lastRow;
         $this->applyBorders($sheet, $dataRange);
-
-        $sheet->getStyle($dataRange)->getAlignment()
-            ->setHorizontal(Alignment::HORIZONTAL_LEFT)
-            ->setVertical(Alignment::VERTICAL_CENTER);
-
-        for ($row = 2; $row <= $lastRow; $row++) {
-            $rowRange = 'A' . $row . ':' . chr(64 + $colCount) . $row;
-
-            if ($row % 2 === 0) {
-                $sheet->getStyle($rowRange)->getFill()
-                    ->setFillType(Fill::FILL_SOLID)
-                    ->getStartColor()->setRGB('F3F4F6');
+        
+        for ($r = $startRow; $r <= $lastRow; $r++) {
+            if ($r % 2 === 0) {
+                $sheet->getStyle('A'.$r.':' . chr(64 + $colCount) . $r)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('F3F4F6');
             }
-
-            $sheet->getRowDimension($row)->setRowHeight(20);
         }
-
-        $sheet->getStyle($dataRange)->getFont()->setSize(10);
     }
 
     private function applyBorders($sheet, $range)
     {
-        $borderStyle = [
-            'borderStyle' => Border::BORDER_THIN,
-            'color'       => ['rgb' => 'CCCCCC'],
-        ];
-
-        $sheet->getStyle($range)->getBorders()
-            ->getLeft()->setBorderStyle($borderStyle['borderStyle'])->getColor()->setRGB($borderStyle['color']['rgb']);
-        $sheet->getStyle($range)->getBorders()
-            ->getRight()->setBorderStyle($borderStyle['borderStyle'])->getColor()->setRGB($borderStyle['color']['rgb']);
-        $sheet->getStyle($range)->getBorders()
-            ->getTop()->setBorderStyle($borderStyle['borderStyle'])->getColor()->setRGB($borderStyle['color']['rgb']);
-        $sheet->getStyle($range)->getBorders()
-            ->getBottom()->setBorderStyle($borderStyle['borderStyle'])->getColor()->setRGB($borderStyle['color']['rgb']);
+        $sheet->getStyle($range)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN)->getColor()->setRGB('CCCCCC');
     }
 
     private function autoFitColumns($sheet, $colCount)
     {
         for ($col = 1; $col <= $colCount; $col++) {
-            $column = chr(64 + $col);
-            $sheet->getColumnDimension($column)->setAutoSize(true);
+            $sheet->getColumnDimension(chr(64 + $col))->setAutoSize(true);
         }
     }
 }

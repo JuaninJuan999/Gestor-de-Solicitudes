@@ -61,8 +61,13 @@
                 Panel de Aprobación <span class="text-indigo-200">Supervisores</span>
             </h2>
             <span class="px-4 py-2 bg-white/20 backdrop-blur-md text-white rounded-lg border border-white/30 font-semibold shadow-sm">
-                Pendientes por aprobar: {{ $solicitudes->total() }}
-            </span>
+    @if($tab == 'historial')
+        📋 Solicitudes Procesadas: {{ $solicitudes->total() }}
+    @else
+        ⏳ Pendientes por aprobar: {{ $solicitudes->total() }}
+    @endif
+</span>
+
         </div>
 
         <!-- Mensajes de Alerta -->
@@ -79,13 +84,32 @@
 
         <!-- TARJETA PRINCIPAL (GLASS CARD MEJORADA) -->
         <div class="glass-card-container">
+            
+            <!-- PESTAÑAS DE NAVEGACIÓN (NUEVO) -->
+            <div class="flex border-b border-gray-200/50 bg-white/40 backdrop-blur-sm">
+                <a href="{{ route('supervisor.index', ['tab' => 'pendientes']) }}" 
+                   class="flex-1 py-4 text-center text-sm font-bold uppercase tracking-wider border-b-2 transition-colors duration-200 
+                   {{ $tab == 'pendientes' ? 'border-indigo-600 text-indigo-700 bg-indigo-50/50' : 'border-transparent text-gray-500 hover:text-indigo-600 hover:bg-gray-50/30' }}">
+                   ⏳ Pendientes
+                </a>
+                <a href="{{ route('supervisor.index', ['tab' => 'historial']) }}" 
+                   class="flex-1 py-4 text-center text-sm font-bold uppercase tracking-wider border-b-2 transition-colors duration-200 
+                   {{ $tab == 'historial' ? 'border-indigo-600 text-indigo-700 bg-indigo-50/50' : 'border-transparent text-gray-500 hover:text-indigo-600 hover:bg-gray-50/30' }}">
+                   📂 Historial
+                </a>
+            </div>
+
             @if($solicitudes->isEmpty())
                 <div class="text-center py-16">
                     <div class="inline-flex items-center justify-center w-20 h-20 bg-indigo-100 rounded-full mb-4">
-                        <span class="text-4xl">🎉</span>
+                        <span class="text-4xl">{{ $tab == 'historial' ? '📂' : '🎉' }}</span>
                     </div>
-                    <h3 class="text-2xl font-bold text-gray-800 mb-2">¡Todo al día!</h3>
-                    <p class="text-gray-600">No tienes solicitudes pendientes de aprobación en este momento.</p>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-2">
+                        {{ $tab == 'historial' ? 'Historial Vacío' : '¡Todo al día!' }}
+                    </h3>
+                    <p class="text-gray-600">
+                        {{ $tab == 'historial' ? 'Aún no has procesado ninguna solicitud.' : 'No tienes solicitudes pendientes de aprobación en este momento.' }}
+                    </p>
                 </div>
             @else
                 <div class="overflow-x-auto">
@@ -96,7 +120,9 @@
                                 <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Fecha</th>
                                 <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Solicitante</th>
                                 <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Detalle</th>
-                                <th class="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Acciones</th>
+                                <th class="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">
+                                    {{ $tab == 'historial' ? 'Estado' : 'Acciones' }}
+                                </th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -120,21 +146,34 @@
                                         </a>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                                        <div class="flex justify-center gap-2">
-                                            
-                                            <!-- Botón APROBAR (Corregido: Sin method PUT) -->
-                                            <form action="{{ route('supervisor.aprobar', $solicitud) }}" method="POST" onsubmit="return confirm('¿Aprobar solicitud? Pasará a Compras.')">
-                                                @csrf
-                                                <button type="submit" class="inline-flex items-center px-3 py-1.5 bg-green-100 text-green-700 border border-green-200 rounded-lg hover:bg-green-200 transition font-bold shadow-sm" title="Aprobar">
-                                                    ✅ Aprobar
-                                                </button>
-                                            </form>
+                                        
+                                        @if($tab == 'pendientes')
+                                            <!-- ACCIONES (Solo visibles en Pendientes) -->
+                                            <div class="flex justify-center gap-2">
+                                                <!-- Botón APROBAR -->
+                                                <form action="{{ route('supervisor.aprobar', $solicitud) }}" method="POST" onsubmit="return confirm('¿Aprobar solicitud? Pasará a Compras.')">
+                                                    @csrf
+                                                    <button type="submit" class="inline-flex items-center px-3 py-1.5 bg-green-100 text-green-700 border border-green-200 rounded-lg hover:bg-green-200 transition font-bold shadow-sm" title="Aprobar">
+                                                        ✅ Aprobar
+                                                    </button>
+                                                </form>
 
-                                            <!-- Botón RECHAZAR -->
-                                            <button type="button" onclick="abrirModalRechazo('{{ $solicitud->id }}')" class="inline-flex items-center px-3 py-1.5 bg-red-100 text-red-700 border border-red-200 rounded-lg hover:bg-red-200 transition font-bold shadow-sm" title="Rechazar">
-                                                ❌ Rechazar
-                                            </button>
-                                        </div>
+                                                <!-- Botón RECHAZAR -->
+                                                <button type="button" onclick="abrirModalRechazo('{{ $solicitud->id }}')" class="inline-flex items-center px-3 py-1.5 bg-red-100 text-red-700 border border-red-200 rounded-lg hover:bg-red-200 transition font-bold shadow-sm" title="Rechazar">
+                                                    ❌ Rechazar
+                                                </button>
+                                            </div>
+                                        @else
+                                            <!-- ESTADO (Visible en Historial) -->
+                                            <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                {{ $solicitud->estado == 'rechazada' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800' }}">
+                                                {{ ucfirst(str_replace('_', ' ', $solicitud->estado)) }}
+                                            </span>
+                                            <div class="text-xs text-gray-400 mt-1">
+                                                {{ $solicitud->updated_at->diffForHumans() }}
+                                            </div>
+                                        @endif
+
                                     </td>
                                 </tr>
                             @endforeach
@@ -149,7 +188,7 @@
     </div>
 </div>
 
-<!-- Modal de Rechazo (Corregido: Sin method PUT) -->
+<!-- Modal de Rechazo -->
 <div id="modalRechazo" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
     <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
@@ -190,7 +229,6 @@
 <script>
     function abrirModalRechazo(solicitudId) {
         const form = document.getElementById('formRechazo');
-        // Ruta JS ajustada para coincidir con web.php: /supervisor/solicitudes/{id}/rechazar
         form.action = `/supervisor/solicitudes/${solicitudId}/rechazar`;
         document.getElementById('modalRechazo').classList.remove('hidden');
     }

@@ -90,7 +90,9 @@
                     </div>
                     <div class="col-rol">
                         <form action="{{ route('admin.users.updateRole', $user) }}" method="POST" class="w-100">
-                            @csrf @method('PUT')
+                            @csrf 
+                            {{-- Este se queda PUT porque en web.php dice Route::put(...) --}}
+                            @method('PUT')
                             <select name="role" class="role-select" onchange="this.form.submit()">
                                 <option value="user" {{ $user->role == 'user' ? 'selected' : '' }}>Usuario</option>
                                 <option value="admin" {{ $user->role == 'admin' ? 'selected' : '' }}>Admin</option>
@@ -107,16 +109,21 @@
                     </div>
                     <div class="col-acciones">
                         <div class="actions-group">
+                            <!-- CORREGIDO: Cambiado de PUT a PATCH para coincidir con web.php -->
                             <form action="{{ route('admin.users.toggleStatus', $user) }}" method="POST" class="d-inline">
-                                @csrf @method('PUT')
+                                @csrf 
+                                @method('PATCH')
                                 @if($user->is_active)
                                     <button class="btn-action btn-danger" title="Bloquear"><i class="bi bi-lock-fill"></i> Bloquear</button>
                                 @else
                                     <button class="btn-action btn-success" title="Activar"><i class="bi bi-unlock-fill"></i> Activar</button>
                                 @endif
                             </form>
+                            
+                            <!-- CORREGIDO: Cambiado de PUT a PATCH para coincidir con web.php -->
                             <form action="{{ route('admin.users.resetPassword', $user) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Restablecer contraseña?');">
-                                @csrf @method('PUT')
+                                @csrf 
+                                @method('PATCH')
                                 <button class="btn-action btn-secondary" title="Resetear"><i class="bi bi-key-fill"></i> Reset</button>
                             </form>
                         </div>
