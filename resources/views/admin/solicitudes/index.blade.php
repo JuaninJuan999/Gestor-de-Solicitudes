@@ -79,7 +79,7 @@
             <form method="GET" action="{{ route('admin.solicitudes.index') }}" class="space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
                     
-                    {{-- Estado (Combinación de todos los posibles estados) --}}
+                    {{-- Estado --}}
                     <div>
                         <label for="estado" class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Estado</label>
                         <select name="estado" id="estado" class="w-full px-3 py-2 bg-white/80 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm transition">
@@ -165,11 +165,12 @@
                         <tbody class="divide-y divide-gray-200/60">
                             @foreach($solicitudes as $solicitud)
                                 <tr class="hover:bg-white/40 transition-colors duration-150">
-                                    {{-- Consecutivo --}}
+                                    {{-- Consecutivo CON BOTÓN EXPANDIBLE --}}
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm font-bold text-purple-800">
+                                        <button onclick="toggleHistorial({{ $solicitud->id }})" class="flex items-center gap-2 text-sm font-bold text-purple-800 hover:text-purple-600 transition focus:outline-none">
+                                            <span id="icon-{{ $solicitud->id }}" class="transform transition-transform duration-200">▶</span>
                                             {{ $solicitud->consecutivo }}
-                                        </div>
+                                        </button>
                                     </td>
 
                                     {{-- Tipo --}}
@@ -194,11 +195,11 @@
                                         </span>
                                     </td>
 
-                                    {{-- Estado (LOGICA DOBLE: CON/SIN SUPERVISOR) --}}
+                                    {{-- Estado (LOGICA ORIGINAL INTACTA) --}}
                                     <td class="px-6 py-4 whitespace-nowrap text-center">
                                         
-                                        @if($solicitud->supervisor_id)
-                                            {{-- === CASO 1: TIENE SUPERVISOR === --}}
+                                        @if($solicitud->tipo_solicitud === 'estandar' && optional($solicitud->supervisor)->id)
+                                            {{-- === CASO 1: SOLICITUD ESTÁNDAR CON SUPERVISOR === --}}
                                             @switch($solicitud->estado)
                                                 @case('pendiente')
                                                     <div class="flex flex-col items-center">
@@ -206,7 +207,7 @@
                                                             <span>⏳</span> Pendiente Aprobación
                                                         </span>
                                                         <span class="text-[10px] text-gray-500 mt-1 font-semibold">
-                                                            (Supervisor: {{ $solicitud->supervisor->name ?? 'N/A' }})
+                                                            (Supervisor: {{ optional($solicitud->supervisor)->name ?? 'N/A' }})
                                                         </span>
                                                     </div>
                                                     @break
@@ -247,9 +248,16 @@
                                             @endswitch
 
                                         @else
-                                            {{-- === CASO 2: NO TIENE SUPERVISOR (DIRECTA) === --}}
+                                            {{-- === CASO 2: OTROS TIPOS O ESTÁNDAR SIN SUPERVISOR === --}}
                                             @switch($solicitud->estado)
                                                 @case('pendiente')
+                                                    <span class="px-3 py-1 inline-flex items-center gap-1 text-xs leading-5 font-bold rounded-full bg-yellow-50 text-yellow-700 border border-yellow-200">
+                                                        <span>•</span> Pendiente
+                                                    </span>
+                                                    @break
+                                                
+                                                @case('aprobado_supervisor')
+                                                    {{-- Registros antiguos mal guardados: mostrar como Pendiente --}}
                                                     <span class="px-3 py-1 inline-flex items-center gap-1 text-xs leading-5 font-bold rounded-full bg-yellow-50 text-yellow-700 border border-yellow-200">
                                                         <span>•</span> Pendiente
                                                     </span>
@@ -307,6 +315,54 @@
                                         </div>
                                     </td>
                                 </tr>
+
+                                {{-- FILA EXPANDIBLE (HISTORIAL) --}}
+                                <tr id="historial-{{ $solicitud->id }}" class="hidden bg-purple-50/30 border-t border-purple-100 transition-all duration-300">
+                                    <td colspan="6" class="p-0">
+                                        <div class="p-6 bg-white/50 backdrop-blur-sm shadow-inner">
+                                            <h4 class="font-bold text-gray-800 mb-4 flex items-center gap-2 text-sm uppercase tracking-wide">
+                                                <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                Línea de Tiempo del Ticket
+                                            </h4>
+
+                                            @if($solicitud->historial->isEmpty())
+                                                <p class="text-sm text-gray-500 italic pl-2">No hay movimientos registrados.</p>
+                                            @else
+                                                <div class="relative border-l-2 border-purple-200 ml-3 space-y-6">
+                                                    @foreach($solicitud->historial as $evento)
+                                                        <div class="ml-6 relative">
+                                                            {{-- Punto en la línea --}}
+                                                            <span class="absolute -left-[31px] top-1 flex items-center justify-center w-4 h-4 bg-white border-2 border-purple-500 rounded-full ring-4 ring-purple-50"></span>
+                                                            
+                                                            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1">
+                                                                <div>
+                                                                    <p class="text-sm font-bold text-gray-800">
+                                                                        {{ ucfirst(str_replace('_', ' ', $evento->accion)) }}
+                                                                        @if($evento->estado_anterior)
+                                                                            <span class="text-xs font-normal text-gray-500 ml-1">
+                                                                                ({{ $evento->estado_anterior }} → <span class="font-semibold text-purple-700">{{ $evento->estado_nuevo }}</span>)
+                                                                            </span>
+                                                                        @endif
+                                                                    </p>
+                                                                    @if($evento->detalle)
+                                                                        <p class="text-sm text-gray-600 mt-1 bg-white/60 p-2 rounded border border-gray-100 inline-block">
+                                                                            {{ $evento->detalle }}
+                                                                        </p>
+                                                                    @endif
+                                                                </div>
+                                                                <div class="text-right">
+                                                                    <p class="text-xs font-bold text-gray-600">{{ $evento->created_at->diffForHumans() }}</p>
+                                                                    <p class="text-[10px] text-gray-400">{{ $evento->created_at->format('d M Y, h:i a') }}</p>
+                                                                    <p class="text-xs text-purple-600 mt-1">Por: {{ $evento->user->name ?? 'Sistema' }}</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </td>
+                                </tr>
                             @endforeach
                         </tbody>
                     </table>
@@ -320,4 +376,20 @@
         </div>
     </div>
 </div>
+
+<script>
+    function toggleHistorial(id) {
+        const row = document.getElementById('historial-' + id);
+        const icon = document.getElementById('icon-' + id);
+        
+        if (row.classList.contains('hidden')) {
+            row.classList.remove('hidden');
+            icon.style.transform = 'rotate(90deg)';
+        } else {
+            row.classList.add('hidden');
+            icon.style.transform = 'rotate(0deg)';
+        }
+    }
+</script>
+
 @endsection

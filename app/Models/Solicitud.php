@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\SolicitudHistorial; // <-- NUEVO (para la relación)
 
 class Solicitud extends Model
 {
@@ -18,13 +19,13 @@ class Solicitud extends Model
         'titulo',
         'descripcion',
         'tipo_solicitud',
-        'area_solicitante', 
+        'area_solicitante',
         'centro_costos',
-        'presupuestado', 
+        'presupuestado',
         'archivo',
         'estado',
-        'justificacion',    
-        'funcion_formato',  
+        'justificacion',
+        'funcion_formato',
     ];
 
     protected $casts = [
@@ -65,6 +66,14 @@ class Solicitud extends Model
     public function comentarios()
     {
         return $this->hasMany(Comentario::class)->orderBy('created_at', 'asc');
+    }
+
+    /**
+     * NUEVO: Relación con el historial de eventos de la solicitud
+     */
+    public function historial()
+    {
+        return $this->hasMany(SolicitudHistorial::class)->orderBy('created_at', 'desc');
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Solicitud;
+use App\Models\SolicitudHistorial; // <--- NUEVO IMPORT
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -23,8 +24,11 @@ class SupervisorController extends Controller
         // Capturamos la pestaña actual de la URL (por defecto 'pendientes')
         $tab = $request->get('tab', 'pendientes');
 
-        // Consulta base: Solo solicitudes asignadas a ESTE supervisor
-        $query = Solicitud::where('supervisor_id', $user->id);
+        // Consulta base: Solo solicitudes ESTÁNDAR asignadas a ESTE supervisor
+        // Cargamos 'historial.user' por si quieres mostrarlo en el panel también
+        $query = Solicitud::where('supervisor_id', $user->id)
+                          ->where('tipo_solicitud', 'estandar') // Solo solicitudes estándar
+                          ->with(['user', 'historial.user']); 
 
         if ($tab === 'historial') {
             // PESTAÑA HISTORIAL:
@@ -50,9 +54,28 @@ class SupervisorController extends Controller
             return back()->with('error', 'No tienes permiso para aprobar esta solicitud.');
         }
 
+        // === VALIDACIÓN: Solo solicitudes ESTÁNDAR pueden ser aprobadas por supervisor ===
+        if ($solicitud->tipo_solicitud !== 'estandar') {
+            return back()->with('error', 'Solo las solicitudes estándar requieren aprobación de supervisor.');
+        }
+
+        // Guardamos estado anterior para el historial
+        $estadoAnterior = $solicitud->estado;
+
         $solicitud->update([
-            'estado' => 'aprobado_supervisor', // Nuevo estado intermedio
+            'estado' => 'aprobado_supervisor',
         ]);
+
+        // === NUEVO: REGISTRAR EN HISTORIAL ===
+        SolicitudHistorial::create([
+            'solicitud_id'    => $solicitud->id,
+            'user_id'         => auth()->id(),
+            'accion'          => 'aprobada_supervisor',
+            'estado_anterior' => $estadoAnterior,
+            'estado_nuevo'    => 'aprobado_supervisor',
+            'detalle'         => 'Solicitud aprobada por supervisor',
+        ]);
+        // =====================================
 
         // === Enviar notificación al usuario ===
         try {
@@ -74,12 +97,31 @@ class SupervisorController extends Controller
             return back()->with('error', 'No tienes permiso.');
         }
 
+        // === VALIDACIÓN: Solo solicitudes ESTÁNDAR pueden ser rechazadas por supervisor ===
+        if ($solicitud->tipo_solicitud !== 'estandar') {
+            return back()->with('error', 'Solo las solicitudes estándar requieren aprobación de supervisor.');
+        }
+
         $request->validate(['motivo' => 'required|string']);
+
+        // Guardamos estado anterior para el historial
+        $estadoAnterior = $solicitud->estado;
 
         $solicitud->update([
             'estado' => 'rechazada',
             'observaciones' => $solicitud->observaciones . " | Rechazo Supervisor: " . $request->motivo
         ]);
+
+        // === NUEVO: REGISTRAR EN HISTORIAL ===
+        SolicitudHistorial::create([
+            'solicitud_id'    => $solicitud->id,
+            'user_id'         => auth()->id(),
+            'accion'          => 'rechazada_supervisor',
+            'estado_anterior' => $estadoAnterior,
+            'estado_nuevo'    => 'rechazada',
+            'detalle'         => 'Rechazada por supervisor. Motivo: ' . $request->motivo,
+        ]);
+        // =====================================
 
         // === Enviar notificación de rechazo ===
         try {

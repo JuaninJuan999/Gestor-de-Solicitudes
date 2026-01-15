@@ -3,7 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\URL; // <--- 1. Importante: Agregamos esto
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Carbon; // <--- NUEVO: Agregamos Carbon
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -20,8 +21,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // 2. Forzamos que todo se cargue con HTTPS
+        // Forzamos que todo se cargue con HTTPS
         // Esto arregla los estilos rotos cuando usas Ngrok
         // URL::forceScheme('https'); //Si para uso local comentar esta linea//
+
+        // NUEVO: Configurar Carbon en español para fechas relativas
+        Carbon::setLocale('es');
     }
 }
