@@ -36,22 +36,33 @@ Route::middleware(['auth'])->group(function () {
 
     // --- SOLICITUDES (CRUD Básico) ---
     Route::get('/solicitudes', [SolicitudController::class, 'index'])->name('solicitudes.index');
+    // Formularios por tipo (ruta dedicada; evita depender de ?tipo= en proxies/caché)
+    Route::get('/solicitudes/create/{tipo}', [SolicitudController::class, 'create'])
+        ->whereIn('tipo', ['estandar', 'traslado_bodegas', 'solicitud_pedidos', 'solicitud_mtto'])
+        ->name('solicitudes.create.tipo');
     Route::get('/solicitudes/create', [SolicitudController::class, 'create'])->name('solicitudes.create');
     Route::post('/solicitudes', [SolicitudController::class, 'store'])->name('solicitudes.store');
-    Route::get('/solicitudes/{solicitud}', [SolicitudController::class, 'show'])->name('solicitudes.show');
-    Route::get('/solicitudes/{id}/edit', [SolicitudController::class, 'edit'])->name('solicitudes.edit');
-    Route::put('/solicitudes/{id}', [SolicitudController::class, 'update'])->name('solicitudes.update');
-    Route::delete('/solicitudes/{id}', [SolicitudController::class, 'destroy'])->name('solicitudes.destroy');
+    Route::get('/solicitudes/{solicitud}', [SolicitudController::class, 'show'])
+        ->whereNumber('solicitud')
+        ->name('solicitudes.show');
+    Route::get('/solicitudes/{id}/edit', [SolicitudController::class, 'edit'])->whereNumber('id')->name('solicitudes.edit');
+    Route::put('/solicitudes/{id}', [SolicitudController::class, 'update'])->whereNumber('id')->name('solicitudes.update');
+    Route::delete('/solicitudes/{id}', [SolicitudController::class, 'destroy'])->whereNumber('id')->name('solicitudes.destroy');
 
     // Actualizar checklist
     Route::post('/solicitudes/{solicitud}/items/checklist', [SolicitudController::class, 'updateChecklist'])
+        ->whereNumber('solicitud')
         ->name('solicitudes.updateChecklist');
 
     // Comentarios
-    Route::post('/solicitudes/{solicitud}/comentarios', [ComentarioController::class, 'store'])->name('comentarios.store');
+    Route::post('/solicitudes/{solicitud}/comentarios', [ComentarioController::class, 'store'])
+        ->whereNumber('solicitud')
+        ->name('comentarios.store');
 
     // Actualizar estado (usuario cancela, etc.)
-    Route::patch('/solicitudes/{solicitud}/status', [SolicitudController::class, 'updateStatus'])->name('solicitudes.updateStatus');
+    Route::patch('/solicitudes/{solicitud}/status', [SolicitudController::class, 'updateStatus'])
+        ->whereNumber('solicitud')
+        ->name('solicitudes.updateStatus');
 });
 
 
@@ -62,8 +73,12 @@ Route::middleware(['auth'])->prefix('supervisor')->name('supervisor.')->group(fu
     Route::get('/panel', [SupervisorController::class, 'index'])->name('index');
     
     // Acciones
-    Route::post('/solicitudes/{solicitud}/aprobar', [SupervisorController::class, 'aprobar'])->name('aprobar');
-    Route::post('/solicitudes/{solicitud}/rechazar', [SupervisorController::class, 'rechazar'])->name('rechazar');
+    Route::post('/solicitudes/{solicitud}/aprobar', [SupervisorController::class, 'aprobar'])
+        ->whereNumber('solicitud')
+        ->name('aprobar');
+    Route::post('/solicitudes/{solicitud}/rechazar', [SupervisorController::class, 'rechazar'])
+        ->whereNumber('solicitud')
+        ->name('rechazar');
 });
 
 
@@ -86,7 +101,9 @@ Route::middleware(['auth', 'is_admin'])->prefix('admin')->name('admin.')->group(
     Route::get('/reportes', [SolicitudController::class, 'reportes'])->name('reportes');
     Route::get('/reportes/export', [AdminComprasController::class, 'export'])->name('reportes.export');
     Route::get('/reportes/export-pdf', [SolicitudController::class, 'exportReportPdf'])->name('reportes.exportPdf');
-    Route::get('/solicitudes/{solicitud}/pdf-revisados', [SolicitudController::class, 'exportPdfRevisados'])->name('solicitudes.pdf.revisados');
+    Route::get('/solicitudes/{solicitud}/pdf-revisados', [SolicitudController::class, 'exportPdfRevisados'])
+        ->whereNumber('solicitud')
+        ->name('solicitudes.pdf.revisados');
 });
 
 require __DIR__ . '/auth.php';

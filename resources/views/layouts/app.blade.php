@@ -104,7 +104,10 @@
         @if(request()->routeIs('solicitudes.*'))
             <div class="min-h-[calc(100vh-112px)] bg-cover bg-center bg-no-repeat" style="background-image: url('{{ asset('images/create-solicitud.jpg') }}');">
                 <div class="py-12 bg-black bg-opacity-40 min-h-full">
-                    @yield('content')
+                    {{-- isolate + z-index: el contenido queda siempre por encima del fondo semitransparente (evita formularios "invisibles") --}}
+                    <div class="relative z-[1] isolate">
+                        @yield('content')
+                    </div>
                 </div>
             </div>
         @else

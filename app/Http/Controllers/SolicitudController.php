@@ -41,9 +41,9 @@ class SolicitudController extends Controller
     /**
      * Muestra el formulario para crear una nueva solicitud.
      */
-    public function create(Request $request)
+    public function create(Request $request, ?string $tipo = null)
     {
-        $tipo = $request->query('tipo');
+        $tipo = $tipo ?? $request->query('tipo');
         $centrosCostos = CentroCosto::orderBy('departamento')->get();
 
         // Obtener lista de supervisores

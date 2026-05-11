@@ -1,16 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<!-- Contenedor con fondo de imagen -->
-<div style="background-image: url('/images/create-solicitud.jpg'); 
-            background-size: cover; 
-            background-position: center; 
-            background-attachment: fixed; 
-            background-repeat: no-repeat;
-            min-height: calc(100vh - 80px);
-            padding-top: 3rem;
-            padding-bottom: 3rem;">
-    
+<div class="relative z-10 py-6">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
         
         <!-- Botón Volver -->

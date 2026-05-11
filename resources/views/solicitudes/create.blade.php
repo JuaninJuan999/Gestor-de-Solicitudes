@@ -1,25 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-
-<!-- === FONDO FIJO === -->
-<div class="fixed-bg-image"></div>
-<div class="fixed-bg-overlay"></div>
-
 <style>
-    /* Fondo fijo */
-    .fixed-bg-image {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background-image: url('/images/create-solicitud.jpg');
-        background-size: cover; background-position: center; background-repeat: no-repeat;
-        z-index: -2;
-    }
-    .fixed-bg-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background-color: rgba(0, 0, 0, 0.3);
-        z-index: -1;
-    }
-
     /* Botón Volver */
     .btn-back-dashboard {
         display: inline-flex; align-items: center; gap: 8px;
