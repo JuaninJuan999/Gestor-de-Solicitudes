@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use App\Models\Solicitud;
 use App\Models\CentroCosto;
@@ -384,9 +385,16 @@ class SolicitudController extends Controller
             'solicitud_mtto'    => $allSolicitudes->where('tipo_solicitud', 'solicitud_mtto')->count(),
         ];
 
-        $solicitudesPorMes = Solicitud::selectRaw('MONTH(created_at) as mes, COUNT(*) as total')
+        $monthExpr = match (DB::getDriverName()) {
+            'pgsql' => 'EXTRACT(MONTH FROM created_at)::int',
+            'sqlite' => "CAST(strftime('%m', created_at) AS INTEGER)",
+            default => 'MONTH(created_at)',
+        };
+
+        $solicitudesPorMes = Solicitud::query()
+            ->selectRaw("{$monthExpr} as mes, COUNT(*) as total")
             ->whereYear('created_at', now()->year)
-            ->groupBy('mes')
+            ->groupByRaw($monthExpr)
             ->orderBy('mes')
             ->get();
 
