@@ -55,4 +55,33 @@ class RegistrationTest extends TestCase
             'username' => 'ana.peña',
         ]);
     }
+
+    public function test_registration_allows_duplicate_email(): void
+    {
+        $area = config('areas.0', 'COMPRAS');
+
+        $this->post('/register', [
+            'primer_nombre' => 'Uno',
+            'primer_apellido' => 'Prueba',
+            'email' => 'compartido@example.com',
+            'area' => $area,
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ]);
+
+        $this->post('/logout');
+
+        $this->post('/register', [
+            'primer_nombre' => 'Dos',
+            'primer_apellido' => 'Prueba',
+            'email' => 'compartido@example.com',
+            'area' => $area,
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ]);
+
+        $this->assertDatabaseCount('users', 2);
+        $this->assertDatabaseHas('users', ['email' => 'compartido@example.com', 'username' => 'uno.prueba']);
+        $this->assertDatabaseHas('users', ['email' => 'compartido@example.com', 'username' => 'dos.prueba']);
+    }
 }

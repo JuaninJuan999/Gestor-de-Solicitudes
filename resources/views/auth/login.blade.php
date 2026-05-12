@@ -14,18 +14,18 @@
     <form method="POST" action="{{ route('login') }}" class="space-y-4">
         @csrf
 
-        <!-- Email Address -->
+        <!-- Usuario (nombre.apellido) -->
         <div>
-            <x-text-input id="email" 
+            <x-text-input id="username" 
                           class="block w-full px-4 py-3 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500" 
-                          type="email" 
-                          name="email" 
-                          :value="old('email')" 
+                          type="text" 
+                          name="username" 
+                          :value="old('username')" 
                           required 
                           autofocus 
                           autocomplete="username" 
-                          placeholder="Usuario" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+                          placeholder="Usuario (ej. juan.perez)" />
+            <x-input-error :messages="$errors->get('username')" class="mt-2" />
         </div>
 
         <!-- Password -->

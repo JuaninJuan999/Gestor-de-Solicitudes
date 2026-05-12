@@ -56,6 +56,15 @@ class User extends Authenticatable
     }
 
     /**
+     * Clave única para tokens de restablecimiento (tabla password_reset_tokens, columna "email").
+     * Evita colisiones cuando varios usuarios comparten el mismo correo.
+     */
+    public function getEmailForPasswordReset(): string
+    {
+        return (string) ($this->username ?? $this->email);
+    }
+
+    /**
      * Verifica si el usuario es administrador
      */
     public function esAdminCompras(): bool
