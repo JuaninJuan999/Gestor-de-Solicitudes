@@ -18,14 +18,41 @@ class RegistrationTest extends TestCase
 
     public function test_new_users_can_register(): void
     {
+        $area = config('areas.0', 'COMPRAS');
+
         $response = $this->post('/register', [
-            'name' => 'Test User',
+            'primer_nombre' => 'Test',
+            'primer_apellido' => 'User',
             'email' => 'test@example.com',
+            'area' => $area,
             'password' => 'password',
             'password_confirmation' => 'password',
         ]);
 
         $this->assertAuthenticated();
         $response->assertRedirect(route('dashboard', absolute: false));
+        $this->assertDatabaseHas('users', [
+            'email' => 'test@example.com',
+            'username' => 'test.user',
+        ]);
+    }
+
+    public function test_registration_username_preserves_enye(): void
+    {
+        $area = config('areas.0', 'COMPRAS');
+
+        $this->post('/register', [
+            'primer_nombre' => 'Ana',
+            'primer_apellido' => 'Peña',
+            'email' => 'ana.pena@example.com',
+            'area' => $area,
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ]);
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'ana.pena@example.com',
+            'username' => 'ana.peña',
+        ]);
     }
 }

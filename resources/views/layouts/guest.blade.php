@@ -7,6 +7,7 @@
     <title>{{ config('app.name') }}</title>
     <link rel="icon" type="image/x-icon" href="{{ asset('images/compra.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @stack('styles')
     <style>
         body {
             background-image: url('{{ asset("images/loginv2.jpg") }}');
@@ -58,5 +59,6 @@
             </p>
         </div>
     </footer>
+    @stack('scripts')
 </body>
 </html>

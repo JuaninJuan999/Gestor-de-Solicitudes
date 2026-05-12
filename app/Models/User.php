@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
@@ -19,6 +20,7 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'username',
         'email',
         'password',
         'area',
@@ -96,5 +98,47 @@ class User extends Authenticatable
     public function solicitudes()
     {
         return $this->hasMany(Solicitud::class);
+    }
+
+    /**
+     * Genera la base nombre.apellido (minúsculas, permite ñ; resto de caracteres solo a-z y 0-9).
+     */
+    public static function baseUsernameFromNames(string $primerNombre, string $primerApellido): string
+    {
+        $n = self::normalizeUsernameSegment($primerNombre);
+        $a = self::normalizeUsernameSegment($primerApellido);
+
+        return $n.'.'.$a;
+    }
+
+    /**
+     * Misma regla que el preview en el formulario de registro (conservar ñ).
+     */
+    public static function normalizeUsernameSegment(string $value): string
+    {
+        $s = Str::lower(trim($value));
+        $s = preg_replace('/[^a-z0-9ñ]+/u', '', $s) ?? '';
+
+        return $s !== '' ? $s : 'x';
+    }
+
+    /**
+     * Username único: si existe nombre.apellido, prueba nombre.apellido1, etc.
+     */
+    public static function makeUniqueUsername(string $primerNombre, string $primerApellido, ?int $exceptUserId = null): string
+    {
+        $base = self::baseUsernameFromNames($primerNombre, $primerApellido);
+        $username = $base;
+        $n = 0;
+
+        while (self::query()
+            ->when($exceptUserId, fn ($q) => $q->where('id', '!=', $exceptUserId))
+            ->where('username', $username)
+            ->exists()) {
+            $n++;
+            $username = $base.$n;
+        }
+
+        return $username;
     }
 }

@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 
@@ -19,7 +20,9 @@ class RegisteredUserController extends Controller
      */
     public function create(): View
     {
-        return view('auth.register');
+        return view('auth.register', [
+            'areas' => config('areas'),
+        ]);
     }
 
     /**
@@ -29,19 +32,26 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        $areas = config('areas', []);
+
         $request->validate([
-    'name' => ['required', 'string', 'max:255'],
-    'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-    'password' => ['required', 'confirmed', Rules\Password::defaults()],
-    'area' => ['required', 'string', 'max:255'], // agrega esta línea
-]);
+            'primer_nombre' => ['required', 'string', 'max:120'],
+            'primer_apellido' => ['required', 'string', 'max:120'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'area' => ['required', 'string', Rule::in($areas)],
+        ]);
+
+        $nombreCompleto = trim($request->primer_nombre).' '.trim($request->primer_apellido);
+        $username = User::makeUniqueUsername($request->primer_nombre, $request->primer_apellido);
 
         $user = User::create([
-    'name' => $request->name,
-    'email' => $request->email,
-    'password' => Hash::make($request->password),
-    'area' => $request->area, // agrega esta línea
-]);
+            'name' => $nombreCompleto,
+            'username' => $username,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'area' => $request->area,
+        ]);
 
         event(new Registered($user));
 

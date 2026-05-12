@@ -12,7 +12,7 @@ class CreateItemsTable extends Migration
             $table->id();
             $table->foreignId('solicitud_id')->constrained('solicitudes')->onDelete('cascade');
             $table->string('referencia')->nullable();
-            $table->integer('unidad')->nullable();
+            $table->string('unidad', 100)->nullable();
             $table->text('descripcion')->nullable();
             $table->integer('cantidad')->nullable();
             $table->timestamps();

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use App\Models\Solicitud;
 use App\Models\CentroCosto;
@@ -281,9 +282,20 @@ class SolicitudController extends Controller
 
         $comentario = $request->comentario ?? null;
 
-        if ($solicitud->user && $solicitud->user->email) {
-            Mail::to($solicitud->user->email)
-                ->send(new CambioEstadoSolicitudMail($solicitud, $comentario));
+        try {
+            if ($solicitud->user && $solicitud->user->email) {
+                Mail::to($solicitud->user->email)
+                    ->send(new CambioEstadoSolicitudMail($solicitud, $comentario));
+            }
+        } catch (\Throwable $e) {
+            Log::warning('No se pudo enviar correo de cambio de estado: '.$e->getMessage(), [
+                'solicitud_id' => $solicitud->id,
+            ]);
+
+            return redirect()
+                ->back()
+                ->with('success', 'Estado actualizado correctamente.')
+                ->with('warning', 'El correo de notificación no se pudo enviar (revise la configuración SMTP en .env).');
         }
 
         return redirect()->back()->with('success', 'Estado actualizado exitosamente');
